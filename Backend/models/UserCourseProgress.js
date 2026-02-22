@@ -11,12 +11,12 @@ const userCourseProgressSchema = new mongoose.Schema({
     ref: "Course",
     required: true,
   },
-  completedLessons: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Lesson",
-    }
-  ],
+
+ completedLessons: [{
+   type: mongoose.Schema.Types.ObjectId,
+   ref: 'Lesson'
+  }], 
+
   attendedLessons:[
   {
     type: mongoose.Schema.Types.ObjectId,

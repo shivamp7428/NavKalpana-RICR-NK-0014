@@ -1,32 +1,67 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import CourseCard from "../Component/CourseCard";
-import {
-  LayoutDashboard,
-  BookOpen,
-  CalendarDays,
-  Award,
-  Clock,
-  MessageCircleQuestion,
-  Briefcase,
-  Users,
-  LogOut,
-} from "lucide-react";
-import { useAuth } from "../Context/AuthContext"; // assuming yeh context hai logout ke liye
+import {LayoutDashboard, BookOpen, CalendarDays, Award, Clock, MessageCircleQuestion, Briefcase, Users, LogOut} from "lucide-react";
+import { useAuth } from "../Context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 const Courses = () => {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const { logout } = useAuth(); // assuming AuthContext se logout aa raha hai
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchCourses = async () => {
       try {
         const res = await axios.get("http://localhost:5000/api/courses");
-        setCourses(res.data.data || []);
+        const coursesData = res.data.data || [];
+
+        const updatedCourses = await Promise.all(
+          coursesData.map(async (course) => {
+            try {
+              const progressRes = await axios.post(
+                "http://localhost:5000/api/progress/",
+                {
+                  userId: user._id,
+                  courseId: course._id,
+                }
+              );
+
+              const completedList = progressRes.data.data?.completedLessons || [];
+              const completed = completedList.length;
+
+              let total = 0;
+              if (course.modules && Array.isArray(course.modules)) {
+                course.modules.forEach((module) => {
+                  if (module.lessons && Array.isArray(module.lessons)) {
+                    total += module.lessons.length;
+                  }
+                });
+              }
+
+              const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+              return {
+                ...course,
+                progress: percentage,
+                completedCount: completed,
+                totalLessons: total,
+              };
+            } catch (err) {
+              console.error("Progress fetch error for course", course._id, err);
+              return {
+                ...course,
+                progress: 0,
+                completedCount: 0,
+                totalLessons: 0,
+              };
+            }
+          })
+        );
+
+        setCourses(updatedCourses);
       } catch (err) {
         console.error("Error fetching courses:", err);
       } finally {
@@ -34,18 +69,18 @@ const Courses = () => {
       }
     };
 
-    fetchCourses();
-  }, []);
+    if (user?._id) {
+      fetchCourses();
+    }
+  }, [user?._id]);
 
   const handleLogout = () => {
     logout();
-    // toast.success("Logout Successfully"); // agar toast use kar rahe ho to
     navigate("/", { replace: true });
   };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300">
-      {/* Sidebar - same as dashboard */}
       <aside className="fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 transform transition-transform md:translate-x-0 flex flex-col">
         <div className="p-6 border-b border-gray-200 dark:border-gray-800">
           <h1 className="text-3xl flex items-center font-black tracking-tighter">
@@ -95,20 +130,17 @@ const Courses = () => {
         </div>
       </aside>
 
-      {/* Main Content - shifted by sidebar width */}
       <main className="md:ml-64 p-4 sm:p-6 lg:p-8 min-h-screen">
         <div className="max-w-7xl mx-auto">
-          {/* Page Header */}
           <div className="mb-10">
             <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">
               Explore Our Courses
             </h1>
             <p className="mt-3 text-lg text-gray-600 dark:text-gray-400">
-              Choose from {courses.length} available courses and start learning today
+              Choose from {courses.length} available courses
             </p>
           </div>
 
-          {/* Loading / Content */}
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {[...Array(8)].map((_, i) => (
@@ -120,8 +152,7 @@ const Courses = () => {
             </div>
           ) : courses.length === 0 ? (
             <div className="text-center py-20 text-gray-500 dark:text-gray-400">
-              <p className="text-xl">No courses available at the moment.</p>
-              <p className="mt-2">Check back soon!</p>
+              <p className="text-xl">No courses available right now.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

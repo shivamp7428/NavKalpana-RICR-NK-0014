@@ -34,75 +34,58 @@ export const getUserCourseProgress = async (req, res) => {
   }
 };
 
+// markLessonComplete controller (updated version)
 
 export const markLessonComplete = async (req, res) => {
   try {
     const { userId, courseId, lessonId } = req.body;
 
-    // ObjectId Validation
-    if (
-      !mongoose.Types.ObjectId.isValid(userId) ||
-      !mongoose.Types.ObjectId.isValid(courseId) ||
-      !mongoose.Types.ObjectId.isValid(lessonId)
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid ID format",
-      });
+    if (!mongoose.Types.ObjectId.isValid(userId) ||
+        !mongoose.Types.ObjectId.isValid(courseId) ||
+        !mongoose.Types.ObjectId.isValid(lessonId)) {
+      return res.status(400).json({ success: false, message: "Invalid ID format" });
     }
 
-    // Check Lesson Exists
     const lesson = await Lesson.findById(lessonId);
-    if (!lesson) {
-      return res.status(404).json({
-        success: false,
-        message: "Lesson not found",
-      });
-    }
+    if (!lesson) return res.status(404).json({ success: false, message: "Lesson not found" });
 
-    //  Check Lesson belongs to this Course
     const module = await Module.findById(lesson.moduleId);
     if (!module || module.courseId.toString() !== courseId) {
-      return res.status(400).json({
-        success: false,
-        message: "Lesson does not belong to this course",
-      });
+      return res.status(400).json({ success: false, message: "Lesson does not belong to this course" });
     }
 
-    //  Find or Create Progress
-    let progress = await UserCourseProgress.findOne({
-      userId,
-      courseId,
-    });
+    let progress = await UserCourseProgress.findOne({ userId, courseId });
 
     if (!progress) {
-      progress = await UserCourseProgress.create({
+      progress = new UserCourseProgress({
         userId,
         courseId,
-        completedLessons: [],
-        attendedLessons: [],
+        completedLessons: [],           // ← array of ObjectId strings/ids
+        // attendedLessons: [],         // agar use kar rahe ho to rakh
+        lastAccessedLesson: null,
       });
     }
 
-    // Prevent Duplicate
-    const alreadyCompleted = progress.completedLessons.some(
-      (id) => id.toString() === lessonId
-    );
-
-    if (!alreadyCompleted) {
-      progress.completedLessons.push(lessonId);
+    // Simple add if not present (no duplicates)
+    if (!progress.completedLessons.some(id => id.toString() === lessonId)) {
+      progress.completedLessons.push(lessonId);   // ← direct ObjectId push
     }
 
     progress.lastAccessedLesson = lessonId;
 
     await progress.save();
 
+    // Response mein direct array bhej
     return res.status(200).json({
       success: true,
       message: "Lesson marked as completed",
-      data: progress,
+      data: {
+        ...progress.toObject(),
+        completedLessons: progress.completedLessons.map(id => id.toString()), // frontend ke liye strings
+      },
     });
   } catch (error) {
+    console.error(error);
     return res.status(500).json({
       success: false,
       message: "Error marking lesson complete",

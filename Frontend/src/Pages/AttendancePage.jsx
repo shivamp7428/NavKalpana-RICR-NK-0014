@@ -170,7 +170,7 @@ const AttendancePage = () => {
             { name: "Assignments", icon: CalendarDays, href: "/assignments" },
             { name: "Attendance", icon: Clock, href: "/attendance", active: true },
             { name: "Quizzes", icon: Award, href: "/quizzes" },
-            { name: "Doubts & Support", icon: MessageCircleQuestion, href: "/support" },
+            { name: "Doubts & Support", icon: MessageCircleQuestion, href: "/studentChat" },
             { name: "Jobs & Internships", icon: Briefcase, href: "/jobs" },
             { name: "Alumni Network", icon: Users, href: "/alumni" },
           ].map((item) => (

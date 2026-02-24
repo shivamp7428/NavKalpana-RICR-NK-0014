@@ -102,7 +102,7 @@ const StudentDashboard = () => {
             { name: 'Assignments', icon: CalendarDays, href: '/assignments' },
             { name: 'Quizzes', icon: Award, href: '/quizzes' },
             { name: 'Attendance', icon: Clock, href: '/attendance' },
-            { name: 'Doubts & Support', icon: MessageCircleQuestion, href: '/support' },
+            { name: 'Doubts & Support', icon: MessageCircleQuestion, href: '/studentChat' },
             { name: 'Jobs & Internships', icon: Briefcase, href: '/jobs' },
             { name: 'Alumni Network', icon: Users, href: '/alumni' },
           ].map((item) => (

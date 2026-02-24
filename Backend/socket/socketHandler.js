@@ -25,9 +25,8 @@ export const setupSocket = (io) => {
 
         await newMessage.save();
 
-        // Real-time bhej do – ab room pe bhej rahe hain
         io.to(receiver).emit('newMessage', newMessage);
-        io.to(sender).emit('newMessage', newMessage);  // sender ko bhi
+        io.to(sender).emit('newMessage', newMessage);
 
         console.log(`Message sent from ${sender} to ${receiver}`);
       } catch (err) {

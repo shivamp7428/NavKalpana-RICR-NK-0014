@@ -1,179 +1,143 @@
 import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import axios from 'axios';
+import { Send, CheckCheck, User, Shield } from 'lucide-react';
 
 const SOCKET_URL = 'http://localhost:5000';
 const socket = io(SOCKET_URL);
 
-const StudentChat = () => {
+const StudentChat = ({ currentUserId: propUserId, otherUserId: propOtherId }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const messagesEndRef = useRef(null);
 
-  // LocalStorage se IDs le rahe hain
   const storedUser = localStorage.getItem('user');
   const user = storedUser ? JSON.parse(storedUser) : null;
-  const currentUserId = user?._id;
+  
+  const currentUserId = propUserId || user?._id;
+  const otherUserId = propOtherId || localStorage.getItem('adminId');
 
-  const otherUserId = localStorage.getItem('adminId'); // admin login ke baad set hota hai
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   useEffect(() => {
-    if (!currentUserId) {
-      console.log('Student ID nahi mila localStorage mein');
-      return;
-    }
+    scrollToBottom();
+  }, [messages]);
 
-    if (!otherUserId) {
-      console.log('Admin ID nahi mila localStorage mein – admin login karo pehle');
-      return;
-    }
-
-    // Join apna room
+  useEffect(() => {
+    if (!currentUserId || !otherUserId) return;
     socket.emit('join', currentUserId);
 
-    // History load karo
     const loadHistory = async () => {
       try {
-        const res = await axios.post('http://localhost:5000/api/messages/conversation', {
+        const res = await axios.post(`${SOCKET_URL}/api/messages/conversation`, {
           userId: currentUserId,
           otherUserId
         });
         setMessages(res.data || []);
-      } catch (err) {
-        console.error('History load failed:', err.response?.data || err.message);
-      }
+      } catch (err) { console.error('History error:', err); }
     };
     loadHistory();
 
-    // Real-time new message
     socket.on('newMessage', (newMsg) => {
-      if (
-        (newMsg.sender === currentUserId && newMsg.receiver === otherUserId) ||
-        (newMsg.sender === otherUserId && newMsg.receiver === currentUserId)
-      ) {
+      if ((newMsg.sender === currentUserId && newMsg.receiver === otherUserId) ||
+          (newMsg.sender === otherUserId && newMsg.receiver === currentUserId)) {
+        
         setMessages((prev) => {
-          // Temp msg ko real se replace
-          const updated = prev.map((m) =>
-            m._id?.startsWith('temp-') ? newMsg : m
+          const isDuplicate = prev.some(m => 
+            m._id === newMsg._id || 
+            (m.content === newMsg.content && m.sender === newMsg.sender && m._id?.startsWith('temp-'))
           );
-          // Duplicate avoid
-          if (!updated.some((m) => m._id === newMsg._id)) {
-            return [...updated, newMsg];
+          
+          if (isDuplicate) {
+            return prev.map(m => (m.content === newMsg.content && m._id?.startsWith('temp-')) ? newMsg : m);
           }
-          return updated;
+          return [...prev, newMsg];
         });
       }
     });
 
-    return () => {
-      socket.off('newMessage');
-    };
+    return () => socket.off('newMessage');
   }, [currentUserId, otherUserId]);
-
-  // Auto scroll
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
 
   const sendMessage = () => {
     if (!input.trim() || !currentUserId || !otherUserId) return;
+    
+    const tempId = 'temp-' + Date.now();
+    const msgData = { 
+      _id: tempId,
+      sender: currentUserId, 
+      receiver: otherUserId, 
+      content: input.trim(),
+      createdAt: new Date().toISOString() 
+    };
 
-    const msgData = {
+    setMessages((prev) => [...prev, msgData]);
+    
+    socket.emit('sendMessage', {
       sender: currentUserId,
       receiver: otherUserId,
       content: input.trim()
-    };
-
-    socket.emit('sendMessage', msgData);
-
-    // Optimistic UI update
-    setMessages((prev) => [
-      ...prev,
-      {
-        ...msgData,
-        _id: 'temp-' + Date.now(),
-        createdAt: new Date().toISOString()
-      }
-    ]);
+    });
 
     setInput('');
   };
 
-  if (!currentUserId) {
-    return (
-      <div className="p-6 text-center text-red-600 font-medium">
-        Student login karo pehle (user ID nahi mila).
-      </div>
-    );
-  }
-
-  if (!otherUserId) {
-    return (
-      <div className="p-6 text-center text-red-600 font-medium">
-        Admin ID nahi mila localStorage mein. Admin login karo pehle.
-      </div>
-    );
-  }
-
   return (
-    <div className="flex flex-col h-[500px] border border-gray-300 rounded-xl shadow-xl bg-white overflow-hidden">
-      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-4">
-        <h3 className="font-bold text-lg">Support / Doubt Chat</h3>
-        <p className="text-sm opacity-90">Admin se direct baat karo</p>
-      </div>
-
-      <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-gray-50">
-        {messages.length === 0 ? (
-          <div className="text-center text-gray-500 py-10">
-            Abhi koi message nahi hai. Pehla message bhejo!
-          </div>
-        ) : (
-          messages.map((msg, index) => (
-            <div
-              key={msg._id || index}
-              className={`flex ${msg.sender === currentUserId ? 'justify-end' : 'justify-start'}`}
-            >
-              <div
-                className={`max-w-[78%] px-4 py-3 rounded-2xl shadow-sm ${
-                  msg.sender === currentUserId
-                    ? 'bg-blue-600 text-white rounded-br-none'
-                    : 'bg-gray-200 text-gray-900 rounded-bl-none'
-                }`}
-              >
-                {msg.sender !== currentUserId && (
-                  <div className="font-semibold text-blue-700 mb-1 text-sm">Admin</div>
-                )}
-                <div className="text-[15px] leading-relaxed">{msg.content}</div>
-                <div className="text-xs mt-1 opacity-70 text-right">
-                  {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </div>
-              </div>
+    <div className="flex flex-col h-screen w-full bg-black font-sans overflow-hidden">
+      <div className="flex-1 overflow-y-auto px-4 pt-4 pb-32 custom-scrollbar bg-black flex flex-col">
+        <div className="max-w-3xl w-full mx-auto mt-auto">
+          {messages.length === 0 ? (
+            <div className="h-[70vh] flex flex-col items-center justify-center text-center">
+              <Shield size={32} className="text-gray-800 mb-2" />
+              <p className="text-gray-600 text-sm">Secure chat active</p>
             </div>
-          ))
-        )}
-        <div ref={messagesEndRef} />
+          ) : (
+            <div className="space-y-4">
+              {messages.map((msg, index) => {
+                const isMe = msg.sender === currentUserId;
+                return (
+                  <div key={msg._id || index} className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`flex gap-3 max-w-[85%] ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-1 ${isMe ? 'bg-blue-600' : 'bg-gray-800'}`}>
+                        {isMe ? <User size={14} className="text-white" /> : <Shield size={14} className="text-gray-400" />}
+                      </div>
+                      <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                        <div className={`px-4 py-2 rounded-2xl text-[14px] ${
+                          isMe ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-[#1a1a1a] text-gray-100 rounded-tl-none border border-gray-800'
+                        }`}>
+                          <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                        </div>
+                        <div className="flex items-center gap-1 mt-1 opacity-40 text-[9px] font-bold text-gray-500 uppercase">
+                          {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {isMe && <CheckCheck size={12} />}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              <div ref={messagesEndRef} />
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="p-3 border-t bg-white flex items-center gap-2">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendMessage())}
-          placeholder="Apna doubt ya request type karo..."
-          className="flex-1 border border-gray-300 rounded-full px-5 py-3 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-        />
-        <button
-          onClick={sendMessage}
-          disabled={!input.trim()}
-          className={`px-6 py-3 rounded-full font-medium transition-colors ${
-            input.trim()
-              ? 'bg-blue-600 text-white hover:bg-blue-700'
-              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-          }`}
-        >
-          Send
-        </button>
+      <div className="shrink-0 bg-black border-t border-gray-900 p-4 pb-8">
+        <div className="max-w-3xl mx-auto flex items-center bg-[#0f0f0f] border border-gray-800 rounded-2xl p-1.5">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendMessage())}
+            placeholder="Type a message..."
+            className="flex-1 bg-transparent border-none px-4 py-2 text-sm outline-none text-white placeholder-gray-600"
+          />
+          <button onClick={sendMessage} disabled={!input.trim()} className={`h-10 w-10 flex items-center justify-center rounded-xl transition-all ${input.trim() ? 'bg-blue-600 text-white' : 'bg-gray-900 text-gray-700'}`}>
+            <Send size={18} />
+          </button>
+        </div>
       </div>
     </div>
   );

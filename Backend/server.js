@@ -8,7 +8,14 @@ import courseRoutes from './route/courseRoutes.js'
 import moduleRoutes from './route/moduleRoutes.js'
 import lessonRoutes from './route/lessonRoutes.js'
 import progressRoutes from './route/progressRoutes.js'
-
+import noteRoute from './route/noteRoutes.js'
+import quizRoute from './route/quizRoutes.js'
+import assignmentRoutes from './route/assignmentRoutes.js'
+import submissionRoutes from './route/submitAssignment.js'
+import messageRoutes from './route/messageRoutes.js'
+import { Server } from 'socket.io';
+import { setupSocket } from './socket/socketHandler.js';
+import adminAuth from './route/AdminAuth.js'
 dotenv.config();
 connectDB();
 
@@ -16,20 +23,31 @@ const app = express();
 
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }));
-app.use(cors({
-  origin: "http://localhost:5173",
-  credentials: true
-}));
-
+app.use(cors({origin: "http://localhost:5173",credentials: true}));
 app.use(morgan("combined"))
 app.use("/api/router/auth",router)
 app.use("/api/courses", courseRoutes);
 app.use("/api/modules", moduleRoutes);
 app.use("/api/lessons", lessonRoutes);
 app.use("/api/progress", progressRoutes);
+app.use("/api/notes",noteRoute);
+app.use("/api/quiz" , quizRoute);
+app.use('/api/assignments', assignmentRoutes);
+app.use("/api/submissions", submissionRoutes);
+app.use('/api/messages', messageRoutes);
+app.use("/api/admin" , adminAuth);
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT , ()=>{
+const server = app.listen(PORT , ()=>{
     console.log("Server Running on port " , PORT)
 })
+
+const io = new Server(server, {
+  cors: {
+    origin: '*',         
+    methods: ['GET', 'POST']
+  }
+});
+
+setupSocket(io);

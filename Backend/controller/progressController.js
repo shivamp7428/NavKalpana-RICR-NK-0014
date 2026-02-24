@@ -34,7 +34,6 @@ export const getUserCourseProgress = async (req, res) => {
   }
 };
 
-// markLessonComplete controller (updated version)
 
 export const markLessonComplete = async (req, res) => {
   try {
@@ -60,28 +59,26 @@ export const markLessonComplete = async (req, res) => {
       progress = new UserCourseProgress({
         userId,
         courseId,
-        completedLessons: [],           // ← array of ObjectId strings/ids
+        completedLessons: [],          
         // attendedLessons: [],         // agar use kar rahe ho to rakh
         lastAccessedLesson: null,
       });
     }
 
-    // Simple add if not present (no duplicates)
     if (!progress.completedLessons.some(id => id.toString() === lessonId)) {
-      progress.completedLessons.push(lessonId);   // ← direct ObjectId push
+      progress.completedLessons.push(lessonId); 
     }
 
     progress.lastAccessedLesson = lessonId;
 
     await progress.save();
 
-    // Response mein direct array bhej
     return res.status(200).json({
       success: true,
       message: "Lesson marked as completed",
       data: {
         ...progress.toObject(),
-        completedLessons: progress.completedLessons.map(id => id.toString()), // frontend ke liye strings
+        completedLessons: progress.completedLessons.map(id => id.toString()), 
       },
     });
   } catch (error) {

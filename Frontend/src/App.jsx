@@ -7,6 +7,17 @@ import NotFound from './Component/NotFound';
 import Loader from "./Component/Loader";
 import Courses from './Pages/Courses';
 import CourseDetail from './Pages/CourseDetail';
+import NotesDetail from "./Pages/NotesDetails";
+import Quiz from "./Pages/Quize";
+import Notes from "./Pages/Notes";
+import AssignmentsPage from "./Pages/Assignment";
+import SubmitAssignment from "./Pages/SubAssignment";
+import AttendancePage from "./Pages/AttendancePage";
+import StudentChat from "./Pages/StudentChat";
+import AdminPublicRoute from './Routes/AdminPublic';
+import AdminLogin from './Pages/adminLogin';
+import AdminProtected from './Routes/AdminProtect';
+import AdminChat from './Pages/adminChat';
 
 function App() {
   return (
@@ -26,8 +37,6 @@ function App() {
         <Route path="*" element={
             <NotFound/>
         } />
-
-
         <Route path="/courses" element={
            <PrivateRoute>
             <Courses/>
@@ -38,6 +47,54 @@ function App() {
             <CourseDetail />
           </PrivateRoute>
         } />
+          <Route path="/noteDetail" element={
+          <PrivateRoute>
+            <NotesDetail />
+          </PrivateRoute>
+        } />
+        <Route path="/note" element={
+          <PrivateRoute>
+            <Notes />
+          </PrivateRoute>
+        } />
+          <Route path="/quizzes" element={
+          <PrivateRoute>
+            <Quiz />
+          </PrivateRoute>
+        } />
+        <Route path="/assignments" element={
+          <PrivateRoute>
+            <AssignmentsPage/>
+          </PrivateRoute>
+        }/>
+
+        <Route path="/submit/:assignmentId" element={
+          <PrivateRoute>
+            <SubmitAssignment/>
+          </PrivateRoute>
+        }/>
+         <Route path="/attendance" element={
+          <PrivateRoute>
+            <AttendancePage/>
+          </PrivateRoute>
+        }/>
+        <Route path="/studentChat" element={
+          <PrivateRoute>
+            <StudentChat/>
+          </PrivateRoute>
+        }/>
+
+        <Route path="/admin/login" element={
+          <AdminPublicRoute>
+            <AdminLogin/>
+          </AdminPublicRoute>
+        }/>
+<Route path="/admin/chat" element={
+          <AdminProtected>
+            <AdminChat/>
+          </AdminProtected>
+        }/>
+
       </Routes>
     </Router>
   );

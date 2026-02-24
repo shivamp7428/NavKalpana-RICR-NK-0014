@@ -42,3 +42,32 @@ export const createModule = async (req, res) => {
     });
   }
 };
+
+export const getModules = async (req, res) => {
+  try {
+    const modules = await Module.find()
+      .populate({
+        path: "notes",
+        select: "title content",
+        options: { sort: { createdAt: -1 } },
+      })
+      .populate("lessons") 
+      .populate({
+        path: "quizes",
+        select: "title questions timeLimit passingScore",
+        options: { sort: { createdAt: -1 } },
+      })
+      .sort({ createdAt: 1 });
+
+    return res.status(200).json({
+      success: true,
+      data: modules,
+    });
+  } catch (error) {
+    console.error("Module fetch error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching modules with notes and quizzes",
+    });
+  }
+};

@@ -18,6 +18,18 @@ const moduleSchema = new mongoose.Schema(
         ref: "Lesson",
       },
     ],
+    notes: [
+       {
+       type: mongoose.Schema.Types.ObjectId,
+       ref: "Note"
+     }
+   ],
+    quizes: [
+       {
+       type: mongoose.Schema.Types.ObjectId,
+       ref: "Quiz"
+     }
+   ]
   },
   {
     timestamps: true,

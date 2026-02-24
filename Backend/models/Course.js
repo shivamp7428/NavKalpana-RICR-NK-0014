@@ -22,6 +22,12 @@ const courseSchema = new mongoose.Schema(
         ref: "Module",
       },
     ],
+    assignments:[
+      {  
+        type:mongoose.Schema.Types.ObjectId,
+        ref:"Assignment"
+      },
+    ]
   },
   {
     timestamps: true,

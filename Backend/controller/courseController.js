@@ -1,6 +1,7 @@
 import Course from "../models/Course.js";
 import Module from "../models/Module.js";
 import Lesson from "../models/Lesson.js";
+import Assignment from "../models/Assignment.js";
 
 export const createCourse = async (req, res) => {
   try {
@@ -36,7 +37,9 @@ export const createCourse = async (req, res) => {
 
 export const getAllCourses = async (req, res) => {
   try {
-    const courses = await Course.find().populate({
+    const courses = await Course.find()
+    .populate('assignments')  
+    .populate({
     path: "modules",
     populate: {
      path: "lessons",
@@ -61,12 +64,14 @@ export const getSingleCourse = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const course = await Course.findById(id).populate({
-      path: "modules",
-      populate: {
-        path: "lessons",
-      },
-    });
+    const course = await Course.findById(id)
+      .populate('assignments')                    
+      .populate({
+        path: 'modules',
+        populate: {
+          path: 'lessons'                        
+        }
+      });
 
     if (!course) {
       return res.status(404).json({

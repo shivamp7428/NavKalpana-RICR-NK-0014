@@ -18,6 +18,8 @@ import AdminPublicRoute from './Routes/AdminPublic';
 import AdminLogin from './Pages/adminLogin';
 import AdminProtected from './Routes/AdminProtect';
 import AdminChat from './Pages/adminChat';
+import Internship from "./Pages/Internship";
+import ApplyInternship from "./Pages/ApplyInternship";
 
 function App() {
   return (
@@ -84,6 +86,16 @@ function App() {
           </PrivateRoute>
         }/>
 
+        <Route path="/jobs" element={
+          <PrivateRoute>
+            <Internship/>
+          </PrivateRoute>
+        }/>
+       <Route path="/apply/:id" element={
+        <PrivateRoute>
+          <ApplyInternship />
+        </PrivateRoute>
+       } />
         <Route path="/admin/login" element={
           <AdminPublicRoute>
             <AdminLogin/>

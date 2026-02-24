@@ -20,6 +20,7 @@ import AdminProtected from './Routes/AdminProtect';
 import AdminChat from './Pages/adminChat';
 import Internship from "./Pages/Internship";
 import ApplyInternship from "./Pages/ApplyInternship";
+import AlumniPage from "./Pages/AlumniPage";
 
 function App() {
   return (
@@ -94,6 +95,11 @@ function App() {
        <Route path="/apply/:id" element={
         <PrivateRoute>
           <ApplyInternship />
+        </PrivateRoute>
+       } />
+       <Route path="/alumni" element={
+        <PrivateRoute>
+          <AlumniPage />
         </PrivateRoute>
        } />
         <Route path="/admin/login" element={

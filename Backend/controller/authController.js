@@ -65,3 +65,28 @@ export const Login = async(req ,res)=>{
         return res.status(500).send({success:false , message:"Internal Server Error"})
  }
 }
+
+export const getAllUser = async (req, res) => {
+  try {
+    const users = await authModel.find();
+
+    if (!users || users.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No users found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: users
+    });
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching users",
+      error: error.message
+    });
+  }
+};

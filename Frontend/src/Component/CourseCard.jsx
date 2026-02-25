@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { BookOpen, Clock, Users } from "lucide-react";
+import { BookOpen, Clock, Users, CheckCircle2 } from "lucide-react";
 
 const CourseCard = ({ course }) => {
   const navigate = useNavigate();
@@ -12,6 +12,8 @@ const CourseCard = ({ course }) => {
   const completedCount = course.completedCount ?? 0;
   const totalLessons = course.totalLessons ?? 0;
   const showProgress = totalLessons > 0;
+
+  const isCompleted = showProgress && progress === 100;
 
   return (
     <div
@@ -29,13 +31,15 @@ const CourseCard = ({ course }) => {
             onError={(e) => (e.target.style.display = "none")}
           />
         )}
-      </div>
 
-      {course.level && (
-        <span className="absolute top-3 right-3 z-10 bg-gray-900/80 text-white text-xs font-medium px-2.5 py-1 rounded-full backdrop-blur-sm">
-          {course.level}
-        </span>
-      )}
+        {/* Completed badge - appears in top-right corner */}
+        {isCompleted && (
+          <div className="absolute top-3 right-3 z-20 bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg flex items-center gap-1.5">
+            <CheckCircle2 size={14} />
+            COMPLETED
+          </div>
+        )}
+      </div>
 
       <div className="p-5">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 line-clamp-2 mb-2">
@@ -64,17 +68,35 @@ const CourseCard = ({ course }) => {
         {showProgress && (
           <div className="mb-6">
             <div className="flex justify-between text-sm mb-1.5">
-              <span className="text-gray-600 dark:text-gray-400 font-medium">Progress</span>
-              <span className="font-bold text-blue-600 dark:text-blue-400">{progress}%</span>
+              <span className="text-gray-600 dark:text-gray-400 font-medium">
+                {isCompleted ? "Status" : "Progress"}
+              </span>
+              <span
+                className={`font-bold ${
+                  isCompleted
+                    ? "text-emerald-600 dark:text-emerald-400"
+                    : "text-blue-600 dark:text-blue-400"
+                }`}
+              >
+                {isCompleted ? "Completed" : `${progress}%`}
+              </span>
             </div>
+
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
               <div
-                className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2.5 rounded-full transition-all duration-500 ease-out"
+                className={`h-full rounded-full transition-all duration-500 ease-out ${
+                  isCompleted
+                    ? "bg-emerald-500"
+                    : "bg-gradient-to-r from-blue-500 to-indigo-600"
+                }`}
                 style={{ width: `${progress}%` }}
               />
             </div>
+
             <div className="text-xs text-gray-500 dark:text-gray-400 mt-1.5 text-center">
-              {completedCount} of {totalLessons} lessons completed
+              {isCompleted
+                ? "Course fully completed"
+                : `${completedCount} of ${totalLessons} lessons completed`}
             </div>
           </div>
         )}

@@ -34,7 +34,6 @@ export const createCourse = async (req, res) => {
   }
 };
 
-
 export const getAllCourses = async (req, res) => {
   try {
     const courses = await Course.find()
@@ -58,7 +57,6 @@ export const getAllCourses = async (req, res) => {
     });
   }
 };
-
 
 export const getSingleCourse = async (req, res) => {
   try {

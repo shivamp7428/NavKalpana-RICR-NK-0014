@@ -103,7 +103,28 @@ const AssignmentsPage = () => {
     fetchAssignments();
   }, [studentId]);
 
-//logout 
+  // Calculate average only from submitted assignments with marks
+  const getAverageMarks = () => {
+    const submittedWithMarks = assignments.filter(
+      (a) => a.isSubmitted && typeof a.marksObtained === 'number'
+    );
+
+    if (submittedWithMarks.length === 0) {
+      return null; // no completed assignments yet
+    }
+
+    const totalMarks = submittedWithMarks.reduce((sum, a) => sum + (a.marksObtained || 0), 0);
+    const avg = (totalMarks / submittedWithMarks.length).toFixed(1);
+
+    return {
+      average: avg,
+      count: submittedWithMarks.length,
+    };
+  };
+
+  const averageInfo = getAverageMarks();
+
+  // logout
   const { logout } = useAuth();
   const handleLogout = () => {
     logout();
@@ -111,7 +132,7 @@ const AssignmentsPage = () => {
     navigate("/", { replace: true });
   };
 
-  //Read Description
+  // Read Description
   const handleReadDescription = (description) => {
     alert(`Assignment Description:\n\n${description || "No description provided."}`);
   };
@@ -193,7 +214,7 @@ const AssignmentsPage = () => {
 
       <main className="lg:ml-64 p-4 sm:p-6 lg:p-8 min-h-screen">
         <div className="max-w-7xl mx-auto">
-          <div className="mb-8 flex items-center gap-3 sm:gap-4">
+          <div className="mb-6 flex items-center gap-3 sm:gap-4">
             <button
               onClick={() => setIsSidebarOpen(true)}
               className="lg:hidden p-2.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 shadow-sm transition-colors"
@@ -210,6 +231,37 @@ const AssignmentsPage = () => {
               </p>
             </div>
           </div>
+
+          {/* ── NEW: Average Marks Summary ── */}
+          {!loading && (
+            <div className="mb-8 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <Award size={24} className="text-indigo-600 dark:text-indigo-400" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                      Your Assignment Performance
+                    </h3>
+                    {averageInfo ? (
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Average Marks: <span className="font-bold text-indigo-600 dark:text-indigo-400">{averageInfo.average}</span> / 100
+                      </p>
+                    ) : (
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        No assignments completed yet
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {averageInfo && (
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                    Based on {averageInfo.count} completed assignment{averageInfo.count !== 1 ? "s" : ""}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

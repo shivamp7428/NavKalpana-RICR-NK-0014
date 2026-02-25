@@ -27,7 +27,11 @@ const courseSchema = new mongoose.Schema(
         type:mongoose.Schema.Types.ObjectId,
         ref:"Assignment"
       },
-    ]
+    ],
+    completed:{
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

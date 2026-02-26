@@ -13,6 +13,7 @@ import {
   Clock,
 } from "lucide-react";
 
+const API_URL = import.meta.env.VITE_API_URL;
 const Quiz = () => {
   const navigate = useNavigate();
 
@@ -35,7 +36,7 @@ const Quiz = () => {
       try {
         setLoading(true);
 
-        const quizzesRes = await axios.get("http://localhost:5000/api/quiz/quizzes");
+        const quizzesRes = await axios.get(`${API_URL}/api/quiz/quizzes`);
         if (quizzesRes.data.success) {
           const formatted = quizzesRes.data.data.map((quiz) => ({
             id: quiz._id,
@@ -53,7 +54,7 @@ const Quiz = () => {
 
         const user = JSON.parse(localStorage.getItem("user") || "{}");
         if (user?._id) {
-          const attemptsRes = await axios.post("http://localhost:5000/api/quiz/user-attempts", {
+          const attemptsRes = await axios.post(`${API_URL}/api/quiz/user-attempts`, {
             studentId: user._id,
           });
 
@@ -74,7 +75,7 @@ const Quiz = () => {
 
   const loadFullQuiz = async (quizId) => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/quiz/quizzes/${quizId}`);
+      const res = await axios.get(`${API_URL}/api/quiz/quizzes/${quizId}`);
       if (res.data.success) {
         const quizData = res.data.data;
         quizData.questions = quizData.questions.map(q => ({
@@ -126,7 +127,7 @@ const Quiz = () => {
       };
 
       const res = await axios.post(
-        `http://localhost:5000/api/quiz/quizzes/${selectedQuiz._id}/submit`,
+        `${API_URL}/api/quiz/quizzes/${selectedQuiz._id}/submit`,
         payload
       );
 

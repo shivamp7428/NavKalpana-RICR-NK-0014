@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+const API_URL = import.meta.env.VITE_API_URL;
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({ name: "", email: "", password: "" });
@@ -21,7 +22,7 @@ const Login = () => {
       : formData;
 
     try {
-      const res = await axios.post(`http://localhost:5000/api/router/auth/${endpoint}`, payload);
+      const res = await axios.post(`${API_URL}/api/router/auth/${endpoint}`, payload);
 
       if (res.data.success) {
         if (isLogin) {

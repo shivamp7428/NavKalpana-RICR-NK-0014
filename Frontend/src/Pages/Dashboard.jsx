@@ -14,6 +14,7 @@ import axios from "axios";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
+const API_URL = import.meta.env.VITE_API_URL;
 const StudentDashboard = () => {
   const [greeting, setGreeting] = useState("");
   const [currentTime, setCurrentTime] = useState("");
@@ -65,10 +66,10 @@ const StudentDashboard = () => {
       if (!studentId) return;
 
       try {
-        const assRes = await axios.get("http://localhost:5000/api/assignments");
+        const assRes = await axios.get(`${API_URL}/api/assignments`);
         const assData = assRes.data || [];
 
-        const subRes = await axios.get(`http://localhost:5000/api/submissions?studentId=${studentId}`);
+        const subRes = await axios.get(`${API_URL}/api/submissions?studentId=${studentId}`);
         const submittedMap = new Map(
           subRes.data.map(s => [s.assignmentId?._id || s.assignmentId, { submittedAt: s.submittedAt, marks: s.marks ?? 0 }])
         );
@@ -99,7 +100,7 @@ const StudentDashboard = () => {
 
         let attendance = { percentage: 0, presentLessons: 0, totalLessons: 0 };
         try {
-          const coursesRes = await axios.get("http://localhost:5000/api/courses");
+          const coursesRes = await axios.get(`${API_URL}/api/courses`);
           const courses = coursesRes.data.data || coursesRes.data || [];
 
           let totalLessons = 0;
@@ -110,7 +111,7 @@ const StudentDashboard = () => {
             c.modules?.forEach(m => t += m.lessons?.length || 0);
             totalLessons += t;
 
-            const pRes = await axios.post("http://localhost:5000/api/progress", { userId: studentId, courseId: c._id });
+            const pRes = await axios.post(`${API_URL}/api/progress`, { userId: studentId, courseId: c._id });
             completedLessons += pRes.data.data?.completedLessons?.length || 0;
           }
 
@@ -131,9 +132,9 @@ const StudentDashboard = () => {
           if (new Date(a.deadline) > new Date()) upcoming.push({title: a.title, deadline: a.deadline, type: "Assignment"});
         });
 
-        const intRes = await axios.get("http://localhost:5000/api/internships");
+        const intRes = await axios.get(`${API_URL}/api/internships`);
         const internships = intRes.data.internships || [];
-        const appRes = await axios.get(`http://localhost:5000/api/applications/student/${studentId}`);
+        const appRes = await axios.get(`${API_URL}/api/applications/student/${studentId}`);
         const appliedMap = new Map(
           appRes.data.applications?.map(app => [app.internshipId?._id || app.internshipId, true]) || []
         );
@@ -145,7 +146,7 @@ const StudentDashboard = () => {
         upcoming.sort((a,b) => new Date(a.deadline) - new Date(b.deadline));
         setDeadlines(upcoming.slice(0,5));
 
-        const usersRes = await axios.get("http://localhost:5000/api/router/auth/get");
+        const usersRes = await axios.get(`${API_URL}/api/router/auth/get`);
         const users = Array.isArray(usersRes.data?.data) ? usersRes.data.data : [];
         const lb = users.map(u => ({
           name: u.name || "Student",
@@ -161,7 +162,7 @@ const StudentDashboard = () => {
 
     fetchData();
 
-    const eventSource = new EventSource(`http://localhost:5000/api/student/${studentId}/progress-stream`);
+    const eventSource = new EventSource(`${API_URL}/api/student/${studentId}/progress-stream`);
 
     eventSource.onmessage = (event) => {
       const data = JSON.parse(event.data);

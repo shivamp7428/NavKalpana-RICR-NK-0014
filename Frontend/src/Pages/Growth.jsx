@@ -14,6 +14,7 @@ import {
 } from "recharts";
 import { useNavigate } from "react-router-dom";
 
+const API_URL = import.meta.env.VITE_API_URL;
 const GrowthPulse = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -34,8 +35,8 @@ const GrowthPulse = () => {
     if (!studentId) return;
     const fetchGrowthPulse = async () => {
       try {
-        const res = await axios.get(
-          `http://localhost:5000/api/student/${studentId}/performance-metrics`
+       const res = await axios.get(
+         `${API_URL}/api/student/${studentId}/performance-metrics`
         );
         setOgiData({
           ogi: res.data.ogi,

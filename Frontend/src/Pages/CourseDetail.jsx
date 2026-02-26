@@ -5,6 +5,7 @@ import VideoPlayer from "../Component/VideoPlayer";
 import { Menu, X, ArrowLeft, ChevronDown, ChevronUp, Check } from "lucide-react";
 import { useAuth } from "../Context/AuthContext";
 
+const API_URL = import.meta.env.VITE_API_URL;
 const CourseDetail = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
@@ -27,7 +28,7 @@ const CourseDetail = () => {
 
   const fetchCourseAndProgress = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/courses/${courseId}`);
+      const res = await axios.get(`${API_URL}/api/courses/${courseId}`);
       const courseData = res.data.data;
       setCourse(courseData);
 
@@ -44,7 +45,7 @@ const CourseDetail = () => {
         }
       }
 
-      const progressRes = await axios.post("http://localhost:5000/api/progress/", {
+      const progressRes = await axios.post(`${API_URL}/api/progress/`, {
         userId: user._id,
         courseId,
       });
@@ -85,7 +86,7 @@ const CourseDetail = () => {
 
   const handleLessonComplete = async (lessonId) => {
     try {
-      const res = await axios.post("http://localhost:5000/api/progress/complete", {
+      const res = await axios.post(`${API_URL}/api/progress/complete`, {
         userId: user._id,
         courseId,
         lessonId,

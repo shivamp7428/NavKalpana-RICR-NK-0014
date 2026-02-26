@@ -3,8 +3,10 @@ import io from 'socket.io-client';
 import axios from 'axios';
 import { Send, CheckCheck, User, Shield } from 'lucide-react';
 
-const SOCKET_URL = 'http://localhost:5000';
-const socket = io(SOCKET_URL);
+const API_URL = import.meta.env.VITE_API_URL;
+const socket = io(API_URL, {
+  transports: ['websocket'],
+});
 
 const StudentChat = ({ currentUserId: propUserId, otherUserId: propOtherId }) => {
   const [messages, setMessages] = useState([]);
@@ -31,7 +33,7 @@ const StudentChat = ({ currentUserId: propUserId, otherUserId: propOtherId }) =>
 
     const loadHistory = async () => {
       try {
-        const res = await axios.post(`${SOCKET_URL}/api/messages/conversation`, {
+        const res = await axios.post(`${API_URL}/api/messages/conversation`, {
           userId: currentUserId,
           otherUserId
         });

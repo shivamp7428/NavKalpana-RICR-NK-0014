@@ -22,6 +22,7 @@ import {
 import { useAuth } from '../Context/AuthContext';
 import { toast } from 'react-hot-toast';
 
+const API_URL = import.meta.env.VITE_API_URL;
 const AssignmentsPage = () => {
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -47,12 +48,10 @@ const AssignmentsPage = () => {
       setLoading(true);
 
       try {
-        const assignmentsRes = await axios.get("http://localhost:5000/api/assignments");
+        const assignmentsRes = await axios.get(`${API_URL}/api/assignments`);;
         const assignmentsData = assignmentsRes.data || [];
 
-        const submissionsRes = await axios.get(
-          `http://localhost:5000/api/submissions?studentId=${studentId}`
-        );
+        const submissionsRes = await axios.get(`${API_URL}/api/submissions?studentId=${studentId}`);
 
         const submittedMap = new Map(
           submissionsRes.data.map((s) => [

@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { BookText, GraduationCap, Search, ArrowLeft, Menu, X } from "lucide-react";
 
+const API_URL = import.meta.env.VITE_API_URL;
 const Notes = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -22,19 +23,19 @@ const Notes = () => {
       setLoading(true);
 
       try {
-        let url = "http://localhost:5000/api/notes";
+        let url = `${API_URL}/api/notes`;
 
         if (courseId) {
-          url = `http://localhost:5000/api/notes/course/${courseId}`;
+         url = `${API_URL}/api/notes/course/${courseId}`;
           try {
-            const courseRes = await axios.get(`http://localhost:5000/api/courses/${courseId}`);
+            const courseRes = await axios.get(`${API_URL}/api/courses/${courseId}`);
             setCourseTitle(courseRes.data.data?.title || "Course Notes");
           } catch (err) {
             console.warn("Could not fetch course title", err);
             setCourseTitle("Course Notes");
           }
         } else {
-          url = "http://localhost:5000/api/modules/modules"; 
+          url = `${API_URL}/api/modules/modules`;
         }
 
         const res = courseId

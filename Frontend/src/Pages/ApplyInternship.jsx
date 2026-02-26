@@ -10,6 +10,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 
+const API_URL = import.meta.env.VITE_API_URL;
 const ApplyInternship = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -26,7 +27,7 @@ const ApplyInternship = () => {
   useEffect(() => {
     const fetchInternship = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/internships/${id}`);
+        const res = await axios.get(`${API_URL}/api/internships/${id}`);
         setInternship(res.data);
       } catch (err) {
         setError("Failed to load internship details");
@@ -72,7 +73,7 @@ const ApplyInternship = () => {
       }
 
       const res = await axios.post(
-        "http://localhost:5000/api/applications/apply",
+        `${API_URL}/api/applications/apply`,
         formData,
         {
           headers: {

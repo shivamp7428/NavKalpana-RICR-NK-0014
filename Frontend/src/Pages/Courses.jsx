@@ -10,6 +10,7 @@ import {
 import { useAuth } from "../Context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
+const API_URL = import.meta.env.VITE_API_URL;
 const Courses = () => {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,14 +22,14 @@ const Courses = () => {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/courses");
+        const res = await axios.get(`${API_URL}/api/courses`);
         const coursesData = res.data.data || [];
 
         const updatedCourses = await Promise.all(
           coursesData.map(async (course) => {
             try {
               const progressRes = await axios.post(
-                "http://localhost:5000/api/progress/",
+                `${API_URL}/api/progress/`,
                 {
                   userId: user._id,
                   courseId: course._id,

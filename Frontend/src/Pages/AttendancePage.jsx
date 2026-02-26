@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { useAuth } from '../Context/AuthContext';
 import { toast } from 'react-hot-toast';
-
+const API_URL = import.meta.env.VITE_API_URL;
 const AttendancePage = () => {
   const [attendanceData, setAttendanceData] = useState([]);
   const [overallPercentage, setOverallPercentage] = useState(0);
@@ -43,7 +43,7 @@ const AttendancePage = () => {
     const fetchAttendance = async () => {
       setLoading(true);
       try {
-        const coursesRes = await axios.get("http://localhost:5000/api/courses");
+        const coursesRes = await axios.get(`${API_URL}/api/courses`);
         const courses = coursesRes.data.data || coursesRes.data || [];
 
         let totalAllLessons = 0;
@@ -62,7 +62,7 @@ const AttendancePage = () => {
 
             totalAllLessons += totalLessons;
 
-            const progressRes = await axios.post("http://localhost:5000/api/progress/", {
+            const progressRes = await axios.post(`${API_URL}/api/progress/`, {
               userId: studentId,
               courseId: course._id,
             });

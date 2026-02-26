@@ -21,6 +21,7 @@ import {
 import { useAuth } from '../Context/AuthContext';
 import { toast } from 'react-hot-toast';
 
+const API_URL = import.meta.env.VITE_API_URL;
 const Internship = () => {
   const [internships, setInternships] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -52,11 +53,11 @@ const Internship = () => {
       setLoading(true);
 
       try {
-        const internRes = await axios.get("http://localhost:5000/api/internships");
+        const internRes = await axios.get(`${API_URL}/api/internships`);
         const internshipsData = internRes.data.internships || [];
 
         const appRes = await axios.get(
-          `http://localhost:5000/api/applications/student/${studentId}`
+         `${API_URL}/api/applications/student/${studentId}`
         );
         const applications = appRes.data.applications || [];
 

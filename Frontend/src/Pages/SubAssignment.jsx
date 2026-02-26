@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { FileUp, Link as LinkIcon, Type, Loader2, CheckCircle, AlertCircle, ArrowLeft } from "lucide-react";
 
+const API_URL = import.meta.env.VITE_API_URL;
 const SubmitAssignmentPage = () => {
   const { assignmentId } = useParams();
   const navigate = useNavigate();
@@ -21,7 +22,7 @@ const SubmitAssignmentPage = () => {
   useEffect(() => {
     const fetchAssignment = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/assignments/${assignmentId}`);
+        const res = await axios.get(`${API_URL}/api/assignments/${assignmentId}`);
         setAssignment(res.data);
       } catch (err) {
         setError("Failed to load assignment details");
@@ -74,7 +75,7 @@ const SubmitAssignmentPage = () => {
       else if (submissionType === "file") formData.append("file", file);
       else if (submissionType === "link") formData.append("link", link.trim());
 
-      const res = await axios.post("http://localhost:5000/api/submissions/sub", formData);
+      const res = await axios.post(`${API_URL}/api/submissions/sub`, formData);
 
       if (res.data.success) {
         setSuccess(true);

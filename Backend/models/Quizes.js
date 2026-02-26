@@ -89,13 +89,14 @@ const quizSchema = new mongoose.Schema(
 quizSchema.index({ isActive: 1 });
 
 // Pre-save hook for correctOption validation
-quizSchema.pre("save", function (next) {
-  this.questions.forEach((q) => {
+quizSchema.pre("save", async function () {
+  for (const q of this.questions) {
     if (q.correctOption >= q.options.length) {
-      next(new Error(`Correct option index ${q.correctOption} is invalid for question "${q.question}"`));
+      throw new Error(
+        `Correct option index ${q.correctOption} is invalid for question: "${q.question}"`
+      );
     }
-  });
-  next();
+  }
 });
 
 export default mongoose.model("Quiz", quizSchema);

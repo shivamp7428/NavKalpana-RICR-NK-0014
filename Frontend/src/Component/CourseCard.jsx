@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { BookOpen, Clock, Users, CheckCircle2 } from "lucide-react";
+import { FaNotesMedical } from "react-icons/fa6";
 
 const CourseCard = ({ course }) => {
   const navigate = useNavigate();
@@ -32,7 +33,6 @@ const CourseCard = ({ course }) => {
           />
         )}
 
-        {/* Completed badge - appears in top-right corner */}
         {isCompleted && (
           <div className="absolute top-3 right-3 z-20 bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg flex items-center gap-1.5">
             <CheckCircle2 size={14} />
@@ -102,11 +102,24 @@ const CourseCard = ({ course }) => {
         )}
 
         <button
+          onClick={() => navigate(`/course/${course._id}`)}
           className="w-full py-3 px-4 bg-gray-800 hover:bg-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 
                      text-white font-medium rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 mt-2"
         >
           <BookOpen size={18} />
           View Course
+        </button>
+
+        <button
+          onClick={(e) => {
+            e.stopPropagation(); 
+            navigate(`/notes?courseId=${course._id}`);
+          }}
+         className="w-full py-3 px-4 bg-gray-800 hover:bg-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 
+                     text-white font-medium rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 mt-2"
+        >
+          <FaNotesMedical size={18} />
+          View Notes
         </button>
       </div>
     </div>

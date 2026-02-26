@@ -175,7 +175,6 @@ const ApplyInternship = () => {
                 </div>
               )}
 
-              {/* Resume Upload */}
               <div>
                 <label className="block text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
                   Upload Your Resume <span className="text-red-500">*</span>
@@ -200,10 +199,9 @@ const ApplyInternship = () => {
                 </div>
               </div>
 
-              {/* Cover Letter (Optional) */}
               <div>
                 <label className="block text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
-                  Cover Letter (Optional)
+                  Cover Letter 
                 </label>
                 <textarea
                   value={coverLetter}

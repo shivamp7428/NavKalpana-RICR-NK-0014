@@ -16,6 +16,7 @@ import {
   CheckCircle,
   AlertCircle,
   FileText,
+  TrendingUp,
 } from "lucide-react";
 import { useAuth } from '../Context/AuthContext';
 import { toast } from 'react-hot-toast';
@@ -51,17 +52,14 @@ const Internship = () => {
       setLoading(true);
 
       try {
-        // 1. Get all internships
         const internRes = await axios.get("http://localhost:5000/api/internships");
         const internshipsData = internRes.data.internships || [];
 
-        // 2. Get student's applications
         const appRes = await axios.get(
           `http://localhost:5000/api/applications/student/${studentId}`
         );
         const applications = appRes.data.applications || [];
 
-        // Map: internshipId → application info
         const appliedMap = new Map(
           applications.map((app) => [
             app.internshipId?._id || app.internshipId,
@@ -80,7 +78,6 @@ const Internship = () => {
           ])
         );
 
-        // Enrich internships
         const updated = internshipsData.map((intern) => {
           const appInfo = appliedMap.get(intern._id);
           return {
@@ -91,13 +88,10 @@ const Internship = () => {
           };
         });
 
-        // Sort: Non-applied first (newest → oldest), then Applied (newest → oldest)
         updated.sort((a, b) => {
-          // Non-applied should come before applied
           if (!a.isApplied && b.isApplied) return -1;
           if (a.isApplied && !b.isApplied) return 1;
 
-          // Within the same group → newest first
           const dateA = new Date(a.createdAt || a._id?.toString().substring(0, 8) || 0);
           const dateB = new Date(b.createdAt || b._id?.toString().substring(0, 8) || 0);
           return dateB - dateA;
@@ -169,12 +163,13 @@ const Internship = () => {
         <nav className="flex-1 mt-4 px-3 space-y-1 overflow-y-auto">
           {[
             { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+            { name: "Growth Pulse", icon: TrendingUp, href: "/growth-pulse"},
             { name: "My Courses", icon: BookOpen, href: "/courses" },
             { name: "Assignments", icon: CalendarDays, href: "/assignments" },
             { name: "Quizzes", icon: Award, href: "/quizzes" },
             { name: "Attendance", icon: Clock, href: "/attendance" },
             { name: "Doubts & Support", icon: MessageCircleQuestion, href: "/studentChat" },
-            { name: "Jobs & Internships", icon: Briefcase, href: "/jobs", active: true },
+            { name: "Jobs & Internships", icon: Briefcase, href: "/jobs",active:true },
             { name: "Alumni Network", icon: Users, href: "/alumni" },
           ].map((item) => (
             <a
@@ -322,7 +317,6 @@ const Internship = () => {
                         </div>
                       </div>
 
-                      {/* Applied date - similar to Submitted date in Assignments */}
                       {applied && intern.appliedAt && (
                         <p className="text-xs text-green-600 dark:text-green-400 mb-3 italic">
                           Applied on: {intern.appliedAt}
@@ -379,7 +373,6 @@ const Internship = () => {
         </div>
       </main>
 
-      {/* Description Modal */}
       {selectedDescription && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
@@ -398,7 +391,7 @@ const Internship = () => {
             <div className="flex justify-end">
               <button
                 onClick={() => setSelectedDescription(null)}
-                className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition"
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition"
               >
                 Close
               </button>

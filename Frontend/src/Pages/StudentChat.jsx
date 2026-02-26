@@ -15,7 +15,7 @@ const StudentChat = ({ currentUserId: propUserId, otherUserId: propOtherId }) =>
   const user = storedUser ? JSON.parse(storedUser) : null;
   
   const currentUserId = propUserId || user?._id;
-  const otherUserId = propOtherId || localStorage.getItem('adminId');
+  const otherUserId =  propOtherId || localStorage.getItem('adminId') || "699cb5cd48d3b00538fde29e";
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

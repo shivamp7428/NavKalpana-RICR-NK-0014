@@ -4,7 +4,8 @@ import CourseCard from "../Component/CourseCard";
 import {
   LayoutDashboard, BookOpen, CalendarDays, Award, Clock,
   MessageCircleQuestion, Briefcase, Users, LogOut, Menu, X,
-  CheckCircle2
+  CheckCircle2,
+  TrendingUp
 } from "lucide-react";
 import { useAuth } from "../Context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -92,7 +93,6 @@ const Courses = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300">
       
-      {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
@@ -100,7 +100,6 @@ const Courses = () => {
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={`
           fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800
@@ -125,7 +124,8 @@ const Courses = () => {
         <nav className="flex-1 mt-4 px-3 space-y-1 overflow-y-auto">
           {[
             { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-            { name: "My Courses", icon: BookOpen, href: "/courses", active: true },
+            { name: "Growth Pulse", icon: TrendingUp, href: "/growth-pulse"},
+            { name: "My Courses", icon: BookOpen, href: "/courses" , active:true },
             { name: "Assignments", icon: CalendarDays, href: "/assignments" },
             { name: "Quizzes", icon: Award, href: "/quizzes" },
             { name: "Attendance", icon: Clock, href: "/attendance" },

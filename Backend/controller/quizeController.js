@@ -60,9 +60,7 @@ export const createQuiz = async (req, res) => {
 export const getAllQuizzes = async (req, res) => {
   try {
     const quizzes = await Quiz.find({ isActive: true })
-      .select("questions.correctOption -questions.explanation")
-      .sort({ createdAt: -1 })
-      .lean();
+      .sort({ createdAt: -1 });  
 
     return res.status(200).json({
       success: true,
@@ -78,7 +76,6 @@ export const getAllQuizzes = async (req, res) => {
     });
   }
 };
-
 export const getQuizById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -86,10 +83,12 @@ export const getQuizById = async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid quiz ID" });
     }
 
-    const quiz = await Quiz.findById(id).select("-questions.correctOption -questions.explanation");
+    const quiz = await Quiz.findById(id); 
+
     if (!quiz) {
       return res.status(404).json({ success: false, message: "Quiz not found" });
     }
+
     if (!quiz.isActive) {
       return res.status(403).json({ success: false, message: "This quiz is not active" });
     }
@@ -177,7 +176,22 @@ export const deleteQuiz = async (req, res) => {
 export const submitQuizAttempt = async (req, res) => {
   try {
     const { id: quizId } = req.params;
-    const { answers, timeTaken } = req.body;
+    const { answers, timeTaken, studentId } = req.body;   // ← studentId frontend se aa raha
+
+    // Required check
+    if (!studentId) {
+      return res.status(400).json({
+        success: false,
+        message: "studentId is required in request body",
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(studentId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid studentId format",
+      });
+    }
 
     const quiz = await Quiz.findById(quizId);
     if (!quiz) {
@@ -221,7 +235,7 @@ export const submitQuizAttempt = async (req, res) => {
     const passed = percentage >= quiz.passingScore;
 
     const attempt = new QuizAttempt({
-      student: req.user?._id , 
+      student: studentId,          // ← yahan se le rahe hain
       quiz: quizId,
       score,
       totalMarks,
@@ -249,7 +263,36 @@ export const submitQuizAttempt = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Error submitting quiz attempt",
-      error: error.message,
+      error: error.message || "Unknown server error",
     });
+  }
+};
+
+export const getUserQuizAttempts = async (req, res) => {
+  try {
+    const studentId = req.body.studentId || req.query.studentId; // frontend se bhej rahe hain
+
+    if (!studentId || !mongoose.Types.ObjectId.isValid(studentId)) {
+      return res.status(400).json({ success: false, message: "Valid studentId required" });
+    }
+
+    const attempts = await QuizAttempt.find({ student: studentId })
+      .populate("quiz", "title _id") // sirf quiz title aur id chahiye
+      .select("quiz score percentage passed completedAt")
+      .sort({ completedAt: -1 })
+      .lean();
+
+    const attemptedQuizIds = attempts.map(a => a.quiz._id.toString());
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        attempts,
+        attemptedQuizIds, // frontend ke liye easy check
+      },
+    });
+  } catch (error) {
+    console.error("Get user attempts error:", error);
+    res.status(500).json({ success: false, message: "Server error", error: error.message });
   }
 };

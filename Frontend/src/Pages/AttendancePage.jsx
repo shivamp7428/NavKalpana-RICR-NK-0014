@@ -17,6 +17,7 @@ import {
   AlertCircle,
   BarChart2,
   PlayCircle,
+  TrendingUp,
 } from "lucide-react";
 import { useAuth } from '../Context/AuthContext';
 import { toast } from 'react-hot-toast';
@@ -111,7 +112,6 @@ const AttendancePage = () => {
         const filteredData = data.filter(Boolean);
         setAttendanceData(filteredData);
 
-        // Overall percentage calculation
         const overall = totalAllLessons > 0 
           ? ((totalAllCompleted / totalAllLessons) * 100).toFixed(1) 
           : 0;
@@ -166,10 +166,11 @@ const AttendancePage = () => {
         <nav className="flex-1 mt-4 px-3 space-y-1 overflow-y-auto">
           {[
             { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+            { name: "Growth Pulse", icon: TrendingUp, href: "/growth-pulse"},
             { name: "My Courses", icon: BookOpen, href: "/courses" },
             { name: "Assignments", icon: CalendarDays, href: "/assignments" },
-            { name: "Attendance", icon: Clock, href: "/attendance", active: true },
             { name: "Quizzes", icon: Award, href: "/quizzes" },
+            { name: "Attendance", icon: Clock, href: "/attendance",active:true },
             { name: "Doubts & Support", icon: MessageCircleQuestion, href: "/studentChat" },
             { name: "Jobs & Internships", icon: Briefcase, href: "/jobs" },
             { name: "Alumni Network", icon: Users, href: "/alumni" },
@@ -220,7 +221,6 @@ const AttendancePage = () => {
             </div>
           </div>
 
-          {/* Overall Attendance Card */}
           {!loading && attendanceData.length > 0 && (
             <div className="mb-8 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl shadow-lg p-6">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-6">

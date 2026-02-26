@@ -16,6 +16,7 @@ import {
   CheckCircle,
   AlertCircle,
   FileText,
+  TrendingUp,
 } from "lucide-react";
 
 import { useAuth } from '../Context/AuthContext';
@@ -103,14 +104,13 @@ const AssignmentsPage = () => {
     fetchAssignments();
   }, [studentId]);
 
-  // Calculate average only from submitted assignments with marks
   const getAverageMarks = () => {
     const submittedWithMarks = assignments.filter(
       (a) => a.isSubmitted && typeof a.marksObtained === 'number'
     );
 
     if (submittedWithMarks.length === 0) {
-      return null; // no completed assignments yet
+      return null; 
     }
 
     const totalMarks = submittedWithMarks.reduce((sum, a) => sum + (a.marksObtained || 0), 0);
@@ -124,7 +124,6 @@ const AssignmentsPage = () => {
 
   const averageInfo = getAverageMarks();
 
-  // logout
   const { logout } = useAuth();
   const handleLogout = () => {
     logout();
@@ -132,7 +131,6 @@ const AssignmentsPage = () => {
     navigate("/", { replace: true });
   };
 
-  // Read Description
   const handleReadDescription = (description) => {
     alert(`Assignment Description:\n\n${description || "No description provided."}`);
   };
@@ -178,13 +176,14 @@ const AssignmentsPage = () => {
         <nav className="flex-1 mt-4 px-3 space-y-1 overflow-y-auto">
           {[
             { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+            { name: "Growth Pulse", icon: TrendingUp, href: "/growth-pulse"},
             { name: "My Courses", icon: BookOpen, href: "/courses" },
-            { name: "Assignments", icon: CalendarDays, href: "/assignments", active: true },
+            { name: "Assignments", icon: CalendarDays, href: "/assignments",active:true },
             { name: "Quizzes", icon: Award, href: "/quizzes" },
             { name: "Attendance", icon: Clock, href: "/attendance" },
             { name: "Doubts & Support", icon: MessageCircleQuestion, href: "/studentChat" },
             { name: "Jobs & Internships", icon: Briefcase, href: "/jobs" },
-            { name: "Alumni Network", icon: Users, href: "/alumni" },
+            { name: "Alumni Network", icon: Users, href: "/alumni"},
           ].map((item) => (
             <a
               key={item.name}

@@ -4,7 +4,8 @@ import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Toolti
 import { 
   LayoutDashboard, BookOpen, CalendarDays, Award, Clock, 
   MessageCircleQuestion, Briefcase, Users, LogOut, Menu, X, 
-  Trophy, Flame, AlertCircle 
+  Trophy, Flame, AlertCircle, 
+  TrendingUp
 } from "lucide-react";
 import { useAuth } from '../Context/AuthContext';
 import { toast } from 'react-hot-toast';
@@ -64,7 +65,6 @@ const StudentDashboard = () => {
       if (!studentId) return;
 
       try {
-        // Assignments (tumhare AssignmentsPage wala logic)
         const assRes = await axios.get("http://localhost:5000/api/assignments");
         const assData = assRes.data || [];
 
@@ -97,7 +97,6 @@ const StudentDashboard = () => {
           assignments: { completed, total: updatedAss.length },
         }));
 
-        // Attendance (lesson %)
         let attendance = { percentage: 0, presentLessons: 0, totalLessons: 0 };
         try {
           const coursesRes = await axios.get("http://localhost:5000/api/courses");
@@ -127,7 +126,6 @@ const StudentDashboard = () => {
           attendance,
         }));
 
-        // Deadlines – only non-submitted assignments & non-applied internships
         const upcoming = [];
         updatedAss.filter(a => !a.isSubmitted).forEach(a => {
           if (new Date(a.deadline) > new Date()) upcoming.push({title: a.title, deadline: a.deadline, type: "Assignment"});
@@ -147,7 +145,6 @@ const StudentDashboard = () => {
         upcoming.sort((a,b) => new Date(a.deadline) - new Date(b.deadline));
         setDeadlines(upcoming.slice(0,5));
 
-        // Leaderboard
         const usersRes = await axios.get("http://localhost:5000/api/router/auth/get");
         const users = Array.isArray(usersRes.data?.data) ? usersRes.data.data : [];
         const lb = users.map(u => ({
@@ -164,12 +161,15 @@ const StudentDashboard = () => {
 
     fetchData();
 
-    const handleVisibility = () => {
-      if (document.visibilityState === 'visible') fetchData();
-    };
-    document.addEventListener('visibilitychange', handleVisibility);
+    const eventSource = new EventSource(`http://localhost:5000/api/student/${studentId}/progress-stream`);
 
-    return () => document.removeEventListener('visibilitychange', handleVisibility);
+    eventSource.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      setStats(prev => ({ ...prev, overallProgress: data.progress }));
+      toast.success("Progress updated!");
+    };
+
+    return () => eventSource.close();
   }, [studentId]);
 
   const handleLogout = () => {
@@ -224,11 +224,12 @@ const StudentDashboard = () => {
 
         <nav className="flex-1 mt-4 px-3 space-y-1 overflow-y-auto">
           {[
-            { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard", active: true },
+            { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard" ,active:true},
+            { name: "Growth Pulse", icon: TrendingUp, href: "/growth-pulse"},
             { name: "My Courses", icon: BookOpen, href: "/courses" },
             { name: "Assignments", icon: CalendarDays, href: "/assignments" },
-            { name: "Attendance", icon: Clock, href: "/attendance" },
             { name: "Quizzes", icon: Award, href: "/quizzes" },
+            { name: "Attendance", icon: Clock, href: "/attendance" },
             { name: "Doubts & Support", icon: MessageCircleQuestion, href: "/studentChat" },
             { name: "Jobs & Internships", icon: Briefcase, href: "/jobs" },
             { name: "Alumni Network", icon: Users, href: "/alumni" },
@@ -284,7 +285,6 @@ const StudentDashboard = () => {
           </div>
         </header>
 
-        {/* Stats Cards – no white border, only shadow */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-8">
           <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6">
             <h3 className="font-semibold text-sm mb-4">Overall Progress</h3>
@@ -329,7 +329,6 @@ const StudentDashboard = () => {
           </div>
         </div>
 
-        {/* Weekly Chart */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6">
             <h3 className="text-lg font-semibold mb-4">This Week's Activity</h3>
@@ -338,7 +337,6 @@ const StudentDashboard = () => {
             </div>
           </div>
 
-          {/* Deadlines – only non-submitted/non-applied */}
           <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6">
             <h3 className="text-lg font-semibold mb-4">Upcoming Deadlines</h3>
             <div className="space-y-3 text-sm">
@@ -354,7 +352,6 @@ const StudentDashboard = () => {
           </div>
         </div>
 
-        {/* Class Leaderboard – same color for all */}
         <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6">
           <div className="flex flex-col sm:flex-row justify-between mb-6 gap-4">
             <h3 className="text-lg font-semibold flex items-center gap-2">
@@ -366,7 +363,7 @@ const StudentDashboard = () => {
                 type="text"
                 value={leaderboardSearch}
                 onChange={e => setLeaderboardSearch(e.target.value)}
-                placeholder="Search name or %..."
+                placeholder="Search name..."
                 className="w-full pl-4 pr-4 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-700"
               />
             </div>

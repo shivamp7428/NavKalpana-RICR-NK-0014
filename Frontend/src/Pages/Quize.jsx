@@ -1,241 +1,487 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { HelpCircle, ArrowLeft, CheckCircle2, XCircle, Trophy, RotateCcw, Menu, X } from "lucide-react";
+import {
+  HelpCircle,
+  ArrowLeft,
+  CheckCircle2,
+  XCircle,
+  Trophy,
+  RotateCcw,
+  Menu,
+  X,
+  Clock,
+} from "lucide-react";
 
 const Quiz = () => {
   const navigate = useNavigate();
+
   const [quizzes, setQuizzes] = useState([]);
   const [selectedQuiz, setSelectedQuiz] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Mobile toggle state
-  
-  // Quiz State
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [score, setScore] = useState(0);
+  const [userAnswers, setUserAnswers] = useState([]);
   const [showResult, setShowResult] = useState(false);
-  const [selectedAnswer, setSelectedAnswer] = useState(null);
-  const [isAnswered, setIsAnswered] = useState(false);
+  const [quizResult, setQuizResult] = useState(null);
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [isTimeUp, setIsTimeUp] = useState(false);
+
+  const [attemptedQuizIds, setAttemptedQuizIds] = useState(new Set());
 
   useEffect(() => {
-    const fetchQuizzes = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const res = await axios.get("http://localhost:5000/api/modules/modules");
-        const modulesData = res.data.data || [];
-        
-        let allQuizzes = modulesData
-          .filter(mod => mod.quizzes && mod.quizzes.length > 0)
-          .map(mod => ({
-            id: mod._id,
-            moduleTitle: mod.title,
-            questions: [
-              {
-                question: `Test your knowledge on ${mod.title}`,
-                options: ["Option A", "Option B", "Option C", "Option D"],
-                correctAnswer: 0
-              }
-            ]
+
+        const quizzesRes = await axios.get("http://localhost:5000/api/quiz/quizzes");
+        if (quizzesRes.data.success) {
+          const formatted = quizzesRes.data.data.map((quiz) => ({
+            id: quiz._id,
+            title: quiz.title,
+            questionsCount: quiz.questions.length,
+            timeLimit: quiz.timeLimit || 600,
+            passingScore: quiz.passingScore,
           }));
-          
-        setQuizzes(allQuizzes);
-        if (allQuizzes.length > 0) setSelectedQuiz(allQuizzes[0]);
+          setQuizzes(formatted);
+
+          if (formatted.length > 0 && !selectedQuiz) {
+            loadFullQuiz(formatted[0].id);
+          }
+        }
+
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
+        if (user?._id) {
+          const attemptsRes = await axios.post("http://localhost:5000/api/quiz/user-attempts", {
+            studentId: user._id,
+          });
+
+          if (attemptsRes.data.success) {
+            const ids = new Set(attemptsRes.data.data.attemptedQuizIds || []);
+            setAttemptedQuizIds(ids);
+          }
+        }
       } catch (err) {
-        console.error("Error fetching quizzes:", err);
+        console.error("Fetch error:", err);
       } finally {
         setLoading(false);
       }
     };
-    fetchQuizzes();
+
+    fetchData();
   }, []);
 
-  const handleAnswerClick = (index) => {
-    if (isAnswered) return;
-    setSelectedAnswer(index);
-    setIsAnswered(true);
-    if (index === selectedQuiz.questions[currentQuestionIndex].correctAnswer) {
-      setScore(score + 1);
+  const loadFullQuiz = async (quizId) => {
+    try {
+      const res = await axios.get(`http://localhost:5000/api/quiz/quizzes/${quizId}`);
+      if (res.data.success) {
+        const quizData = res.data.data;
+        quizData.questions = quizData.questions.map(q => ({
+          ...q,
+          correctOption: parseInt(q.correctOption, 10)
+        }));
+        setSelectedQuiz(quizData);
+        setCurrentQuestionIndex(0);
+        setUserAnswers([]);
+        setShowResult(false);
+        setQuizResult(null);
+        setIsTimeUp(false);
+        setTimeLeft(quizData.timeLimit || 600);
+      }
+    } catch (err) {
+      console.error("Load quiz error:", err);
     }
+  };
+
+  const handleAnswerClick = (selectedOptionIndex) => {
+    if (userAnswers.some((a) => a.questionIndex === currentQuestionIndex)) return;
+
+    setUserAnswers((prev) => [
+      ...prev,
+      { questionIndex: currentQuestionIndex, selectedOption: selectedOptionIndex },
+    ]);
   };
 
   const handleNext = () => {
-    const nextIndex = currentQuestionIndex + 1;
-    if (nextIndex < selectedQuiz.questions.length) {
-      setCurrentQuestionIndex(nextIndex);
-      setSelectedAnswer(null);
-      setIsAnswered(false);
+    if (currentQuestionIndex + 1 < selectedQuiz.questions.length) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
     } else {
-      setShowResult(true);
+      submitQuiz();
     }
   };
 
-  const resetQuiz = () => {
+  const submitQuiz = async () => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      if (!user?._id) {
+        alert("Please login first");
+        return;
+      }
+
+      const payload = {
+        answers: userAnswers,
+        timeTaken: (selectedQuiz.timeLimit || 600) - timeLeft,
+        studentId: user._id,
+      };
+
+      const res = await axios.post(
+        `http://localhost:5000/api/quiz/quizzes/${selectedQuiz._id}/submit`,
+        payload
+      );
+
+      if (res.data.success) {
+        setQuizResult(res.data.data);
+        setShowResult(true);
+        setIsTimeUp(false);
+        setAttemptedQuizIds((prev) => new Set([...prev, selectedQuiz._id]));
+      } else {
+        alert(res.data.message || "Submission failed");
+      }
+    } catch (err) {
+      console.error("Submit error:", err);
+      if (err.response?.data?.message) {
+        alert(err.response.data.message);
+      } else {
+        alert("Network or server error");
+      }
+    }
+  };
+
+  const handleTimeUpRetry = () => {
+    setIsTimeUp(false);
     setCurrentQuestionIndex(0);
-    setScore(0);
+    setUserAnswers([]);
     setShowResult(false);
-    setSelectedAnswer(null);
-    setIsAnswered(false);
+    setQuizResult(null);
+    setTimeLeft(selectedQuiz.timeLimit || 600);
   };
 
-  const handleQuizSelection = (quiz) => {
-    setSelectedQuiz(quiz);
-    resetQuiz();
-    setIsSidebarOpen(false); // Mobile par quiz select hote hi sidebar close
-  };
+  useEffect(() => {
+    if (!selectedQuiz || showResult || isTimeUp) return;
 
-  if (loading) return (
-    <div className="flex h-screen items-center justify-center bg-white dark:bg-gray-950">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-    </div>
-  );
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setIsTimeUp(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [selectedQuiz, showResult, isTimeUp]);
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-950">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex h-screen bg-white dark:bg-gray-950 overflow-hidden relative">
-      
-      {/* --- Sidebar Overlay (Mobile Only) --- */}
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-950 overflow-hidden relative">
       {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
+        <div
+          className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
 
-      {/* --- Sidebar --- */}
-      <aside className={`
-        fixed inset-y-0 left-0 z-50 w-80 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col transform transition-transform duration-300 ease-in-out
-        lg:relative lg:translate-x-0
-        ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
-      `}>
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <button 
-              onClick={() => navigate(-1)} 
-              className="flex items-center gap-2 text-gray-500 hover:text-indigo-600 transition-colors text-sm font-semibold group"
+      <aside
+        className={`
+          fixed inset-y-0 left-0 z-50 w-80 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 
+          flex flex-col transform transition-transform duration-300 ease-in-out
+          lg:relative lg:translate-x-0
+          ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
+        `}
+      >
+        <div className="p-6 border-b border-gray-200 dark:border-gray-800">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
             >
-              <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+              <ArrowLeft size={18} />
               Back
             </button>
-
-            {/* Close Button (Mobile Only) */}
-            <button 
-              onClick={() => setIsSidebarOpen(false)}
-              className="lg:hidden p-2 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-lg"
-            >
-              <X size={20} />
+            <button className="lg:hidden" onClick={() => setIsSidebarOpen(false)}>
+              <X size={24} className="text-gray-600 dark:text-gray-400" />
             </button>
           </div>
-
-          <h1 className="text-3xl font-black tracking-tighter mb-6">
-            <span className="bg-gradient-to-r from-indigo-500 to-cyan-400 bg-clip-text text-transparent">Quiz</span>
-            <span className="text-gray-900 dark:text-white">Hub</span>
+          <h1 className="mt-6 text-2xl font-bold text-gray-900 dark:text-white">
+            Quiz <span className="text-indigo-600">Hub</span>
           </h1>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-4 pb-6 space-y-1">
-          <p className="px-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Available Quizzes</p>
-          {quizzes.map((quiz) => (
-            <button
-              key={quiz.id}
-              onClick={() => handleQuizSelection(quiz)}
-              className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 ${
-                selectedQuiz?.id === quiz.id
-                  ? "bg-indigo-600 text-white shadow-lg"
-                  : "text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800"
-              }`}
-            >
-              <span className="text-sm font-bold block truncate">{quiz.moduleTitle}</span>
-              <span className={`text-[10px] uppercase ${selectedQuiz?.id === quiz.id ? "text-indigo-200" : "text-gray-400"}`}>
-                {quiz.questions.length} Questions
-              </span>
-            </button>
-          ))}
-        </nav>
+        <div className="flex-1 overflow-y-auto p-4">
+          <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-3 px-2">
+            Available Quizzes
+          </p>
+
+          {quizzes.map((quiz) => {
+            const isAttempted = attemptedQuizIds.has(quiz.id);
+
+            return (
+              <button
+                key={quiz.id}
+                onClick={() => {
+                  loadFullQuiz(quiz.id);
+                  setIsSidebarOpen(false);
+                }}
+                className={`w-full text-left p-4 rounded-lg mb-2 transition-all ${
+                  selectedQuiz?._id === quiz.id
+                    ? "bg-indigo-600 text-white"
+                    : "text-gray-900 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700"
+                }`}
+              >
+                <div className="font-medium">{quiz.title}</div>
+                <div className="text-xs opacity-80">
+                  {quiz.questionsCount} questions • {Math.floor(quiz.timeLimit / 60)} min
+                </div>
+
+                {isAttempted && (
+                  <div className="flex items-center gap-1 text-green-600 dark:text-green-400 text-sm font-medium mt-1">
+                    <CheckCircle2 size={14} />
+                    Attempted
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </aside>
 
-      {/* --- Quiz Area --- */}
-      <main className="flex-1 flex flex-col h-full overflow-hidden bg-white dark:bg-gray-950">
-        <header className="h-16 border-b border-gray-100 dark:border-gray-800 flex items-center px-4 lg:px-10 justify-between bg-white/80 dark:bg-gray-950/80 backdrop-blur-md">
+      <main className="flex-1 flex flex-col overflow-hidden">
+        <header className="h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex items-center px-4 lg:px-8 justify-between shadow-sm">
           <div className="flex items-center gap-3">
-            {/* Menu Toggle (Mobile Only) */}
-            <button 
-              onClick={() => setIsSidebarOpen(true)}
-              className="lg:hidden p-2 -ml-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
-            >
-              <Menu size={24} />
+            <button className="lg:hidden" onClick={() => setIsSidebarOpen(true)}>
+              <Menu size={24} className="text-gray-700 dark:text-gray-300" />
             </button>
-
-            <HelpCircle className="hidden sm:block text-indigo-500" size={20} />
-            <h2 className="text-xs sm:text-sm font-black text-gray-900 dark:text-white uppercase tracking-tighter truncate max-w-[150px] sm:max-w-none">
-              {selectedQuiz?.moduleTitle}
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white truncate max-w-[220px] sm:max-w-none">
+              {selectedQuiz?.title || "Select a Quiz"}
             </h2>
           </div>
-          {selectedQuiz && !showResult && (
-            <div className="text-[10px] sm:text-xs font-bold text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full whitespace-nowrap">
-              {currentQuestionIndex + 1} / {selectedQuiz.questions.length}
+
+          {selectedQuiz && !showResult && !isTimeUp && (
+            <div
+              className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${
+                timeLeft <= 30
+                  ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"
+                  : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+              }`}
+            >
+              <Clock size={16} />
+              {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, "0")}
             </div>
           )}
         </header>
 
-        <div className="flex-1 overflow-y-auto flex items-center justify-center p-4 sm:p-8">
-          <div className="max-w-2xl w-full">
-            {showResult ? (
-              <div className="text-center p-6 sm:p-10 bg-gray-50 dark:bg-gray-900/50 rounded-3xl border border-gray-100 dark:border-gray-800">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Trophy className="text-indigo-600" size={32} />
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-10 bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
+          <div className="max-w-4xl w-full">
+            {isTimeUp ? (
+              <div className="text-center py-12 px-6 bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-800">
+                <div className="w-24 h-24 mx-auto rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center mb-6">
+                  <Clock className="text-red-600 dark:text-red-400" size={48} />
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white mb-2">Quiz Completed!</h2>
-                <p className="text-gray-500 mb-6">You scored {score} out of {selectedQuiz.questions.length}</p>
-                <button 
-                  onClick={resetQuiz}
-                  className="flex items-center gap-2 mx-auto px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all"
+
+                <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">
+                  Time's Up!
+                </h2>
+
+                <p className="text-xl text-gray-900 dark:text-gray-200 mb-8">
+                  Your time for this quiz has expired.
+                </p>
+
+                <button
+                  onClick={handleTimeUpRetry}
+                  className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition flex items-center gap-2 mx-auto"
                 >
-                  <RotateCcw size={18} /> Try Again
+                  <RotateCcw size={18} />
+                  Try Again (Full Time)
                 </button>
               </div>
+            ) : showResult && quizResult ? (
+              <div className="py-8 px-4 sm:px-10 bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-800 max-h-[85vh] overflow-y-auto">
+                <div className="text-center mb-12 pt-4">
+                  <div
+                    className={`w-24 h-24 mx-auto rounded-full flex items-center justify-center mb-4 ${
+                      quizResult.passed ? "bg-green-100 dark:bg-green-900/50" : "bg-red-100 dark:bg-red-900/50"
+                    }`}
+                  >
+                    {quizResult.passed ? (
+                      <Trophy className="text-green-600 dark:text-green-400" size={48} />
+                    ) : (
+                      <XCircle className="text-red-600 dark:text-red-400" size={48} />
+                    )}
+                  </div>
+
+                  <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-3">
+                    {quizResult.passed ? "Great! You Passed" : "No Problem, Try Again"}
+                  </h2>
+
+                  <div className="text-6xl font-black text-indigo-600 mb-3">
+                    {quizResult.percentage}%
+                  </div>
+
+                  <p className="text-xl text-gray-900 dark:text-gray-200">
+                    {quizResult.score} / {quizResult.totalMarks} marks
+                  </p>
+
+                  <p className="text-lg text-gray-600 dark:text-gray-400 mt-2">
+                    {quizResult.passed
+                      ? `You cleared it! (Passing: ${selectedQuiz.passingScore}%)`
+                      : `Required ${selectedQuiz.passingScore}% to pass`}
+                  </p>
+                </div>
+
+                <div className="space-y-10">
+                  <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white text-center mb-6">
+                    Your Performance Breakdown
+                  </h3>
+
+                  {selectedQuiz.questions.map((q, index) => {
+                    const userAns = userAnswers.find((a) => a.questionIndex === index);
+                    const userSelected = userAns ? parseInt(userAns.selectedOption, 10) : -1;
+                    const correct = parseInt(q.correctOption, 10);
+                    const isCorrect = userSelected === correct;
+                    const attempted = userSelected !== -1;
+
+                    return (
+                      <div
+                        key={index}
+                        className={`p-6 rounded-2xl border-2 shadow-md transition-all ${
+                          isCorrect && attempted
+                            ? "border-green-600"
+                            : attempted && !isCorrect
+                            ? "border-red-600"
+                            : "border-gray-300 dark:border-gray-600"
+                        }`}
+                      >
+                        <div className="flex items-start gap-4 mb-6 pt-4">
+                          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/60 flex items-center justify-center text-indigo-700 dark:text-indigo-300 font-bold text-lg">
+                            {index + 1}
+                          </div>
+                          <p className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-200 leading-relaxed">
+                            {q.question}
+                          </p>
+                        </div>
+
+                        <div className="grid gap-3">
+                          {q.options.map((opt, optIdx) => {
+                            const isThisCorrect = optIdx === correct;
+                            const isThisWrong = optIdx === userSelected && !isCorrect;
+
+                            return (
+                              <div
+                                key={optIdx}
+                                className={`p-4 rounded-xl border-2 text-sm sm:text-base font-medium flex items-center justify-between text-gray-900 dark:text-gray-200 ${
+                                  isThisCorrect
+                                    ? "border-green-600"
+                                    : isThisWrong
+                                    ? "border-red-600"
+                                    : "border-gray-300 dark:border-gray-600"
+                                }`}
+                              >
+                                <span className={isThisWrong ? "line-through" : ""}>{opt}</span>
+
+                                <div className="flex items-center gap-2">
+                                  {isThisCorrect && (
+                                    <span className="flex items-center gap-1 text-green-600 dark:text-green-400 font-bold">
+                                      <CheckCircle2 size={18} /> Correct
+                                    </span>
+                                  )}
+                                  {isThisWrong && (
+                                    <span className="flex items-center gap-1 text-red-600 dark:text-red-400 font-bold">
+                                      <XCircle size={18} /> Wrong
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {q.explanation && (
+                          <div className="mt-6 p-4 bg-gray-100 dark:bg-gray-800 rounded-xl text-sm text-gray-700 dark:text-gray-300 border-l-4 border-indigo-500 dark:border-indigo-400">
+                            <strong className="block mb-2 text-indigo-600 dark:text-indigo-400">
+                              Explanation:
+                            </strong>
+                            {q.explanation}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-12 text-center">
+                  <button
+                    onClick={() => {
+                      setShowResult(false);
+                      setQuizResult(null);
+                      resetQuiz();
+                    }}
+                    className="px-12 py-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-lg rounded-xl transition shadow-md"
+                  >
+                    <RotateCcw size={20} className="inline mr-2" />
+                    Try Again
+                  </button>
+                </div>
+              </div>
             ) : selectedQuiz ? (
-              <div className="space-y-6 sm:space-y-8">
+              <div className="space-y-8 max-w-3xl mx-auto">
                 <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white leading-tight">
                   {selectedQuiz.questions[currentQuestionIndex].question}
                 </h3>
 
-                <div className="grid gap-3 sm:gap-4">
+                <div className="grid gap-4">
                   {selectedQuiz.questions[currentQuestionIndex].options.map((option, idx) => {
-                    const isCorrect = idx === selectedQuiz.questions[currentQuestionIndex].correctAnswer;
-                    const isWrong = selectedAnswer === idx && !isCorrect;
-                    
+                    const isSelected = userAnswers.some(
+                      (a) => a.questionIndex === currentQuestionIndex && a.selectedOption === idx
+                    );
+
                     return (
                       <button
                         key={idx}
-                        disabled={isAnswered}
                         onClick={() => handleAnswerClick(idx)}
-                        className={`w-full p-4 sm:p-5 rounded-2xl border-2 text-left transition-all flex items-center justify-between text-sm sm:text-base ${
-                          isAnswered && isCorrect 
-                            ? "border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400" 
-                            : isAnswered && isWrong
-                            ? "border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400"
-                            : selectedAnswer === idx
-                            ? "border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20"
-                            : "border-gray-100 dark:border-gray-800 hover:border-indigo-300 dark:hover:border-indigo-700 text-gray-700 dark:text-gray-300"
+                        disabled={isSelected}
+                        className={`w-full p-5 text-left rounded-xl border-2 transition-all text-base sm:text-lg font-medium text-gray-900 dark:text-gray-200 ${
+                          isSelected
+                            ? "border-indigo-700 bg-indigo-50 dark:bg-indigo-950/50 shadow-lg"
+                            : "border-gray-300 dark:border-gray-700 hover:border-indigo-500 hover:bg-indigo-50/30 dark:hover:bg-indigo-950/30"
                         }`}
                       >
-                        <span className="font-semibold">{option}</span>
-                        {isAnswered && isCorrect && <CheckCircle2 size={20} className="shrink-0 ml-2" />}
-                        {isAnswered && isWrong && <XCircle size={20} className="shrink-0 ml-2" />}
+                        {option}
+                        {isSelected && (
+                          <CheckCircle2
+                            size={20}
+                            className="inline ml-3 text-indigo-700 dark:text-indigo-300"
+                          />
+                        )}
                       </button>
                     );
                   })}
                 </div>
 
-                {isAnswered && (
-                  <button 
-                    onClick={handleNext}
-                    className="w-full py-4 bg-gray-900 dark:bg-white dark:text-gray-900 text-white rounded-2xl font-black uppercase tracking-widest hover:opacity-90 transition-all text-sm sm:text-base"
-                  >
-                    {currentQuestionIndex + 1 === selectedQuiz.questions.length ? "See Results" : "Next Question"}
-                  </button>
-                )}
+                <button
+                  onClick={handleNext}
+                  disabled={!userAnswers.some((a) => a.questionIndex === currentQuestionIndex)}
+                  className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-lg rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                >
+                  {currentQuestionIndex + 1 === selectedQuiz.questions.length
+                    ? "Submit Quiz"
+                    : "Next Question"}
+                </button>
               </div>
-            ) : null}
+            ) : (
+              <div className="text-center py-20 text-gray-600 dark:text-gray-400 text-lg">
+                Select a quiz from the sidebar to begin
+              </div>
+            )}
           </div>
         </div>
       </main>

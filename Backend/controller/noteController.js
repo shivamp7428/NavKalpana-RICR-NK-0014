@@ -2,11 +2,10 @@ import mongoose from "mongoose";
 import Note from "../models/Notes.js";
 import Module from "../models/Module.js";
 
-// Create a new Note
+// Create 
 export const createNote = async (req, res) => {
   try {
     const { title, content, moduleId } = req.body;
-
     if (!title || !content || !moduleId)
       return res.status(400).json({ success: false, message: "Title, content and moduleId are required" });
 
@@ -28,7 +27,7 @@ export const createNote = async (req, res) => {
   }
 };
 
-// Get all notes for a module
+// Get all notes for a specific module
 export const getNotesByModule = async (req, res) => {
   try {
     const { moduleId } = req.params;
@@ -91,5 +90,53 @@ export const deleteNote = async (req, res) => {
     res.status(200).json({ success: true, message: "Note deleted successfully" });
   } catch (err) {
     res.status(500).json({ success: false, message: "Error deleting note", error: err.message });
+  }
+};
+
+export const getNotesByCourse = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(courseId)) {
+      return res.status(400).json({ success: false, message: "Invalid course ID" });
+    }
+
+    let modules = await Module.find({ course: courseId }).select("_id title").lean();
+
+    if (modules.length === 0) {
+      modules = await Module.find({ courseId: courseId }).select("_id title").lean();
+    }
+
+    if (modules.length === 0) {
+      modules = await Module.find({ course_id: courseId }).select("_id title").lean();
+    }
+
+    console.log(`Found ${modules.length} modules for course ${courseId}`);
+
+    if (modules.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: "No modules found for this course",
+        count: 0,
+        data: []
+      });
+    }
+
+    const moduleIds = modules.map(m => m._id);
+
+    const notes = await Note.find({ moduleId: { $in: moduleIds } })
+      .sort({ title: 1 })
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      count: notes.length,
+      data: notes,
+      modulesCount: modules.length
+    });
+
+  } catch (err) {
+    console.error("getNotesByCourse error:", err);
+    res.status(500).json({ success: false, message: "Server error", error: err.message });
   }
 };

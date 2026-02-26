@@ -62,7 +62,6 @@ const quizAttemptSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Index for student attempts
 quizAttemptSchema.index({ student: 1, quiz: 1 });
 
 export default mongoose.model("QuizAttempt", quizAttemptSchema);

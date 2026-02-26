@@ -18,6 +18,7 @@ import { setupSocket } from './socket/socketHandler.js';
 import adminAuth from './route/AdminAuth.js'
 import internshipRoutes from './route/InternshipRoute.js'
 import applicationRoutes from './route/applicationRoutes.js'
+import studentRoutes from './route/studentRoutes.js'
 
 dotenv.config();
 connectDB();
@@ -41,6 +42,8 @@ app.use('/api/messages', messageRoutes);
 app.use("/api/admin" , adminAuth);
 app.use("/api/internships", internshipRoutes);
 app.use("/api/applications", applicationRoutes);
+app.use('/api', studentRoutes);
+
 const PORT = process.env.PORT || 5000;
 
 const server = app.listen(PORT , ()=>{
@@ -55,3 +58,4 @@ const io = new Server(server, {
 });
 
 setupSocket(io);
+

@@ -14,7 +14,6 @@ const AdminChat = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const adminId = localStorage.getItem('adminId');
 
-  // Time formatting helper
   const formatLastSeen = (date) => {
     if (!date) return 'Offline';
     const diff = Math.floor((new Date() - new Date(date)) / 60000);
@@ -26,7 +25,6 @@ const AdminChat = () => {
   useEffect(() => {
     if (!adminId) return;
 
-    // Join admin room
     socket.emit('join', adminId);
 
     const fetchConversations = async () => {
@@ -38,14 +36,12 @@ const AdminChat = () => {
 
     fetchConversations();
 
-    // Listen for live status changes from socket
     socket.on('userStatusChanged', (data) => {
       setConversations(prev => prev.map(c => 
         c.studentId === data.userId ? { ...c, isOnline: data.isOnline, lastSeen: data.lastSeen } : c
       ));
     });
 
-    // Listen for new messages to update the snippet in sidebar
     socket.on('newMessage', (msg) => {
       setConversations(prev => prev.map(c => 
         (c.studentId === msg.sender || c.studentId === msg.receiver) 

@@ -9,7 +9,6 @@ import Courses from './Pages/Courses';
 import CourseDetail from './Pages/CourseDetail';
 import NotesDetail from "./Pages/NotesDetails";
 import Quiz from "./Pages/Quize";
-import Notes from "./Pages/Notes";
 import AssignmentsPage from "./Pages/Assignment";
 import SubmitAssignment from "./Pages/SubAssignment";
 import AttendancePage from "./Pages/AttendancePage";
@@ -21,6 +20,7 @@ import AdminChat from './Pages/adminChat';
 import Internship from "./Pages/Internship";
 import ApplyInternship from "./Pages/ApplyInternship";
 import AlumniPage from "./Pages/AlumniPage";
+import GrowthPulse from './Pages/Growth';
 
 function App() {
   return (
@@ -37,6 +37,11 @@ function App() {
             <Dashboard />
           </PrivateRoute>
         } />
+        <Route path="/growth-pulse" element={
+          <PrivateRoute>
+            <GrowthPulse />
+          </PrivateRoute>
+        } />
         <Route path="*" element={
             <NotFound/>
         } />
@@ -50,16 +55,12 @@ function App() {
             <CourseDetail />
           </PrivateRoute>
         } />
-          <Route path="/noteDetail" element={
+          <Route path="/notes" element={
           <PrivateRoute>
             <NotesDetail />
           </PrivateRoute>
         } />
-        <Route path="/note" element={
-          <PrivateRoute>
-            <Notes />
-          </PrivateRoute>
-        } />
+      
           <Route path="/quizzes" element={
           <PrivateRoute>
             <Quiz />
@@ -107,7 +108,7 @@ function App() {
             <AdminLogin/>
           </AdminPublicRoute>
         }/>
-<Route path="/admin/chat" element={
+     <Route path="/admin/chat" element={
           <AdminProtected>
             <AdminChat/>
           </AdminProtected>

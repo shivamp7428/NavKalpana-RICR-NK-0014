@@ -1,5 +1,5 @@
 import express from "express";
-import { createQuiz, deleteQuiz, getAllQuizzes, getQuizById, submitQuizAttempt, updateQuiz } from '../controller/quizeController.js';
+import { createQuiz, deleteQuiz, getAllQuizzes, getQuizById, getUserQuizAttempts, submitQuizAttempt, updateQuiz } from '../controller/quizeController.js';
 
 
 const router = express.Router();
@@ -10,5 +10,5 @@ router.get("/quizzes/:id", getQuizById);
 router.put("/quizzes/:id", updateQuiz);
 router.delete("/quizzes/:id", deleteQuiz);
 router.post("/quizzes/:id/submit", submitQuizAttempt);
-
+router.post("/user-attempts", getUserQuizAttempts);
 export default router;

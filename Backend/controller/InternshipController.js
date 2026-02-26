@@ -32,7 +32,6 @@ export const createInternship = async (req, res) => {
   }
 };
 
-
 export const getAllInternships = async (req, res) => {
   try {
 
@@ -51,7 +50,6 @@ export const getAllInternships = async (req, res) => {
     });
   }
 };
-
 
 export const getInternshipById = async (req, res) => {
   try {
@@ -107,7 +105,6 @@ export const updateInternship = async (req, res) => {
     });
   }
 };
-
 
 export const deleteInternship = async (req, res) => {
   try {

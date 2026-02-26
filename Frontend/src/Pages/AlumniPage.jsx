@@ -1,4 +1,3 @@
-// src/pages/AlumniPage.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -16,11 +15,11 @@ import {
   Linkedin,
   Search,
   Loader2,
+  TrendingUp,
 } from "lucide-react";
 import { useAuth } from '../Context/AuthContext';
 import { toast } from 'react-hot-toast';
 
-// 100 dummy alumni
 const dummyAlumni = Array.from({ length: 100 }, (_, i) => {
   const batches = ["2015-2019", "2016-2020", "2017-2021", "2018-2022", "2019-2023", "2020-2024"];
   const companies = ["Google", "Microsoft", "Amazon", "Meta", "Adobe", "Atlassian", "Goldman Sachs", "JPMorgan", "Flipkart", "Uber", "Zomato", "Swiggy", "PhonePe", "Paytm", "Oracle", "Cisco", "Salesforce", "Deloitte", "ThoughtWorks"];
@@ -37,7 +36,7 @@ const dummyAlumni = Array.from({ length: 100 }, (_, i) => {
     role: roles[i % roles.length],
     linkedin: "#",
     story: `Loves building scalable ${roles[i % roles.length].toLowerCase()} solutions – grew from campus to ${companies[i % companies.length]} level.`,
-    thumbnail: null, // agar real thumbnail chahiye to URL daal sakte ho
+    thumbnail: null,
   };
 });
 
@@ -54,13 +53,12 @@ const AlumniPage = () => {
     navigate("/", { replace: true });
   };
 
-  // Fake loading simulation on search
   useEffect(() => {
     if (searchTerm.trim() !== '') {
       setIsSearching(true);
       const timer = setTimeout(() => {
         setIsSearching(false);
-      }, 800); // 0.8 sec loader – real API mein remove kar dena
+      }, 800); 
       return () => clearTimeout(timer);
     } else {
       setIsSearching(false);
@@ -74,12 +72,10 @@ const AlumniPage = () => {
     alumnus.role.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Sirf 4 show karne ke liye jab search khali ho
   const displayAlumni = searchTerm.trim() === '' ? dummyAlumni.slice(0, 4) : filteredAlumni;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300">
-      {/* Sidebar Overlay */}
       {isSidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
@@ -87,7 +83,6 @@ const AlumniPage = () => {
         />
       )}
 
-      {/* Sidebar – exact Assignments jaisa */}
       <aside
         className={`
           fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-900
@@ -114,6 +109,7 @@ const AlumniPage = () => {
         <nav className="flex-1 mt-4 px-3 space-y-1 overflow-y-auto">
           {[
             { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+            { name: "Growth Pulse", icon: TrendingUp, href: "/growth-pulse"},
             { name: "My Courses", icon: BookOpen, href: "/courses" },
             { name: "Assignments", icon: CalendarDays, href: "/assignments" },
             { name: "Quizzes", icon: Award, href: "/quizzes" },
@@ -148,10 +144,8 @@ const AlumniPage = () => {
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className="lg:ml-64 p-4 sm:p-6 lg:p-8 min-h-screen">
         <div className="max-w-7xl mx-auto">
-          {/* Mobile Menu */}
           <div className="mb-6 flex items-center gap-4 lg:hidden">
             <button
               onClick={() => setIsSidebarOpen(true)}
@@ -164,7 +158,6 @@ const AlumniPage = () => {
             </h1>
           </div>
 
-          {/* Search Section */}
           <div className="mb-10">
             <p className="text-lg text-gray-600 dark:text-gray-400 mb-6">
               Connect with our alumni for guidance, mentorship, referrals, and inspiration.
@@ -178,12 +171,11 @@ const AlumniPage = () => {
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search by name, company, batch, or role..."
+                placeholder="Search by name, company..."
                 className="w-full pl-12 pr-4 py-3.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition"
               />
             </div>
 
-            {/* Loader when searching */}
             {isSearching && (
               <div className="flex justify-center items-center mt-8">
                 <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
@@ -192,7 +184,6 @@ const AlumniPage = () => {
             )}
           </div>
 
-          {/* Alumni Cards – Assignments jaisa style */}
           {!isSearching && (
             <>
               {displayAlumni.length === 0 ? (
@@ -214,7 +205,6 @@ const AlumniPage = () => {
                         className={cardClass}
                         onClick={() => window.open(alumnus.linkedin, '_blank')}
                       >
-                        {/* Gradient Header – Assignments jaisa */}
                         <div className="relative h-48 bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-7xl select-none overflow-hidden">
                           {alumnus.name?.trim()?.charAt(0)?.toUpperCase() || "?"}
 
@@ -227,7 +217,6 @@ const AlumniPage = () => {
                             />
                           )}
 
-                          {/* Status-like badge */}
                           <span className="absolute top-3 right-3 bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 text-xs font-medium px-3 py-1 rounded-full backdrop-blur-sm flex items-center gap-1 shadow-sm">
                             <Briefcase size={14} />
                             {alumnus.role.split(" ")[0]}

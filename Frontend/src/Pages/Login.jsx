@@ -5,9 +5,15 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const API_URL = import.meta.env.VITE_API_URL;
+
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
-  const [formData, setFormData] = useState({ name: "", email: "", password: "" });
+  const [loading, setLoading] = useState(false); // ✅ added
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+  });
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -15,6 +21,7 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true); // ✅ start loader
 
     const endpoint = isLogin ? "login" : "register";
     const payload = isLogin
@@ -22,14 +29,17 @@ const Login = () => {
       : formData;
 
     try {
-      const res = await axios.post(`${API_URL}/api/router/auth/${endpoint}`, payload);
+      const res = await axios.post(
+        `${API_URL}/api/router/auth/${endpoint}`,
+        payload
+      );
 
       if (res.data.success) {
         if (isLogin) {
           localStorage.setItem("token", res.data.token);
+          localStorage.setItem("user", JSON.stringify(res.data.user));
           toast.success(`Welcome ${res.data.user.name}! Redirecting...`);
-          localStorage.setItem("user", JSON.stringify(res.data.user))
-          localStorage.setItem("token", res.data.token)
+
           setTimeout(() => {
             window.location.href = "/dashboard";
           }, 1500);
@@ -42,6 +52,8 @@ const Login = () => {
       }
     } catch (err) {
       toast.error(err.response?.data?.message || "Authentication failed");
+    } finally {
+      setLoading(false); // ✅ stop loader
     }
   };
 
@@ -59,13 +71,13 @@ const Login = () => {
         <div className="text-center mb-10">
           <motion.div initial={{ y: -20 }} animate={{ y: 0 }} className="inline-block">
             <h1 className="text-3xl flex items-center font-black tracking-tighter">
-            <span className="bg-gradient-to-r from-indigo-500 to-cyan-400 bg-clip-text text-transparent">
-            Nav
-          </span>
-          <span className="text-gray-900 dark:text-white">
-           Kalpana
-         </span>
-         </h1>
+              <span className="bg-gradient-to-r from-indigo-500 to-cyan-400 bg-clip-text text-transparent">
+                Nav
+              </span>
+              <span className="text-gray-900 dark:text-white">
+                Kalpana
+              </span>
+            </h1>
             <div className="h-1 w-12 bg-indigo-500 mx-auto mt-1 rounded-full" />
           </motion.div>
         </div>
@@ -80,7 +92,9 @@ const Login = () => {
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.2 }}
               >
-                <label className="text-xs font-semibold text-indigo-300 uppercase tracking-wider ml-1">Full Name</label>
+                <label className="text-xs font-semibold text-indigo-300 uppercase tracking-wider ml-1">
+                  Full Name
+                </label>
                 <input
                   type="text"
                   name="name"
@@ -94,7 +108,9 @@ const Login = () => {
           </AnimatePresence>
 
           <div>
-            <label className="text-xs font-semibold text-indigo-300 uppercase tracking-wider ml-1">Email Address</label>
+            <label className="text-xs font-semibold text-indigo-300 uppercase tracking-wider ml-1">
+              Email Address
+            </label>
             <input
               type="email"
               name="email"
@@ -106,7 +122,9 @@ const Login = () => {
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-indigo-300 uppercase tracking-wider ml-1">Password</label>
+            <label className="text-xs font-semibold text-indigo-300 uppercase tracking-wider ml-1">
+              Password
+            </label>
             <input
               type="password"
               name="password"
@@ -121,9 +139,17 @@ const Login = () => {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             type="submit"
-            className="w-full py-4 bg-indigo-600 cursor-pointer hover:bg-indigo-500 text-white rounded-xl font-bold text-lg shadow-lg transition-all mt-4"
+            disabled={loading}
+            className="w-full py-4 bg-indigo-600 cursor-pointer hover:bg-indigo-500 text-white rounded-xl font-bold text-lg shadow-lg transition-all mt-4 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            {isLogin ? "Log In" : "Sign In"}
+            {loading ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Processing...
+              </>
+            ) : (
+              isLogin ? "Log In" : "Sign In"
+            )}
           </motion.button>
         </form>
 

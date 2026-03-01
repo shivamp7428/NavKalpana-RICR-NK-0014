@@ -120,7 +120,6 @@ const Login = () => {
               className="w-full mt-1 p-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
             />
           </div>
-
           <div>
             <label className="text-xs font-semibold text-indigo-300 uppercase tracking-wider ml-1">
               Password
@@ -153,7 +152,7 @@ const Login = () => {
           </motion.button>
         </form>
 
-        <div className="mt-8 text-center">
+        {/* <div className="mt-8 text-center">
           <button
             onClick={() => setIsLogin(!isLogin)}
             className="text-sm text-gray-400 transition-colors"
@@ -163,7 +162,7 @@ const Login = () => {
               {isLogin ? "Sign" : "Login"}
             </span>
           </button>
-        </div>
+        </div> */}
       </motion.div>
 
       <ToastContainer
